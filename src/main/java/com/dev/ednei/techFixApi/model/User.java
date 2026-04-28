@@ -1,14 +1,17 @@
 package com.dev.ednei.techFixApi.model;
 
 import com.dev.ednei.techFixApi.DTOS.user.UserCreateDTO;
+import com.dev.ednei.techFixApi.DTOS.user.UserUpdateDTO;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.StringUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -44,6 +47,25 @@ public class User implements UserDetails {
         this.password = userDTO.password();
         this.role = RoleUser.fromString(userDTO.role());
         this.status = true;
+    }
+
+    public void updateUser(UserUpdateDTO dto) {
+
+        if (StringUtils.hasText(dto.name())) {
+            this.name = dto.name();
+        }
+
+        if (StringUtils.hasText(dto.login())) {
+            this.login =(dto.login());
+        }
+
+        if (StringUtils.hasText(dto.password())) {
+            this.password = dto.password();
+        }
+    }
+
+    public void disableUser(){
+        this.status = false;
     }
 
     public void alterPasswordHashCode(String password){

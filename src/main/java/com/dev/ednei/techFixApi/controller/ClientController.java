@@ -19,7 +19,6 @@ public class ClientController {
     @Autowired
     private ClientService service;
 
-
     @GetMapping()
     public ResponseEntity findAllClientOrByCpf(@RequestParam(required = false) String cpf, Pageable pageable){
 

@@ -22,7 +22,6 @@ public class UserController {
     @GetMapping()
     public ResponseEntity<Page<UserResumeDTO>> findAllUsers(Pageable pageable){
         var listUsers = service.findAllUsers(pageable);
-
         return ResponseEntity.status(HttpStatus.OK).body(listUsers);
     }
 

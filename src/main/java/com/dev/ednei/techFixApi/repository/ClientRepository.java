@@ -12,4 +12,6 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
     Optional<ClientFullDTO> findByCpf(String cpf);
 
     Page<Client> findAll(Pageable pageable);
+
+    boolean existsByCpf(String cpf);
 }

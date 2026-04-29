@@ -1,5 +1,6 @@
 package com.dev.ednei.techFixApi.model;
 
+import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestCreateDTO;
 import com.dev.ednei.techFixApi.model.enums.CategoryDevice;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -34,5 +35,10 @@ public class ServiceRequest {
     private List<ServiceOrder> serviceOrderList;
 
 
-
+    public ServiceRequest(ServiceRequestCreateDTO serviceDTO) {
+        this.device = serviceDTO.device();
+        this.category = CategoryDevice.fromString(serviceDTO.category());
+        this.problemDescription = serviceDTO.problemDescription();
+        this.client = new Client(serviceDTO.client());
+    }
 }

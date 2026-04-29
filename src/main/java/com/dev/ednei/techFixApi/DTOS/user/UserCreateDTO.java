@@ -1,5 +1,6 @@
 package com.dev.ednei.techFixApi.DTOS.user;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record UserCreateDTO(
@@ -7,6 +8,7 @@ public record UserCreateDTO(
         String name,
 
         @NotBlank
+        @Email
         String login,
 
         @NotBlank

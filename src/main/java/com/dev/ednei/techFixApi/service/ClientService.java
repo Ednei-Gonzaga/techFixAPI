@@ -63,6 +63,12 @@ public class ClientService {
 
     }
 
+    public boolean existsClient(Long id){
+        return  repository.existsById(id);
+    }
 
+    public boolean existsClientByCpf(String cpf){
+        return repository.existsByCpf(cpf);
+    }
 
 }

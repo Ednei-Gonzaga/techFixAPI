@@ -9,7 +9,7 @@ public enum CategoryDevice {
         DESKTOP;
 
     @JsonCreator
-    public CategoryDevice fromString(String value){
+    public static CategoryDevice fromString(String value){
             for(CategoryDevice category: CategoryDevice.values()){
                 if(category.name().equalsIgnoreCase(value)) {
                     return category;

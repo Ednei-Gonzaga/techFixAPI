@@ -38,6 +38,10 @@ public class Client {
         this.whatsapp = clientDTO.whatsapp();
     }
 
+    public Client(Long id) {
+        this.id = id;
+    }
+
     public void updateClient(ClientUpdateDTO clientDTO) {
         if (StringUtils.hasText(clientDTO.name())) {
             this.name = clientDTO.name();

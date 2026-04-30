@@ -10,7 +10,8 @@ import org.springframework.data.repository.query.Param;
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
 
     @Query("""
-            SELECT s FROM ServiceRequest s JOIN s.client c 
+            SELECT s FROM ServiceRequest s 
+            JOIN s.client c 
             WHERE c.cpf = :cpf
             """)
     Page<ServiceRequest> findAllByCpfClient(@Param("cpf") String cpf, Pageable pageable);

@@ -1,6 +1,7 @@
 package com.dev.ednei.techFixApi.infra.exception;
 
 import com.dev.ednei.techFixApi.infra.exception.errors.EntityNotFoundException;
+import com.dev.ednei.techFixApi.infra.exception.errors.InvalidParameterException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,15 @@ public class customErrorHandler {
         problemDetail.setInstance(URI.create("/techfix-api/entity-not-found"));
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+    }
+
+    @ExceptionHandler(InvalidParameterException.class)
+    public ResponseEntity handlerInvalidParam(InvalidParameterException ex){
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Invalid Parameter");
+        problemDetail.setInstance(URI.create("/techfix-api/invalid-parameter"));
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
 
     private record  DataError400(String field, String message){

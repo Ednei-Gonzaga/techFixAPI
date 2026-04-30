@@ -1,5 +1,6 @@
 package com.dev.ednei.techFixApi.service;
 
+import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestFullDTO;
 import com.dev.ednei.techFixApi.infra.exception.errors.EntityNotFoundException;
@@ -18,10 +19,15 @@ public class ServiceRequestService {
     @Autowired
     private ClientService clientService;
 
+    @Autowired
+    private ServiceOrderService serviceOrderService;
+
     public ServiceRequestFullDTO saveService(ServiceRequestCreateDTO serviceDTO) {
         checkExistsClient(serviceDTO.client());
 
         var serviceRequest = repository.save(new ServiceRequest(serviceDTO));
+
+        serviceOrderService.saveServiceOrder(new ServiceOrderCreateDTO(serviceRequest.getId()));
 
         return new ServiceRequestFullDTO(serviceRequest);
 

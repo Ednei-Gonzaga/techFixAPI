@@ -16,6 +16,8 @@ public class TokenService {
         return JWT.create()
                 .withIssuer("tech-api")
                 .withSubject(user.getLogin())
+                .withClaim("id", user.getId())
+                .withClaim("role", user.getRole().name())
                 .sign(algorithm);
     }
 

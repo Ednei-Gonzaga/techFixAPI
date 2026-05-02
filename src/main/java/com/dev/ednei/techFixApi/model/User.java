@@ -49,6 +49,10 @@ public class User implements UserDetails {
         this.status = true;
     }
 
+    public User(Long id) {
+        this.id = id;
+    }
+
     public void updateUser(UserUpdateDTO dto) {
 
         if (StringUtils.hasText(dto.name())) {

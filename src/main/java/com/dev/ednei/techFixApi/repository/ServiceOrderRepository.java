@@ -11,7 +11,7 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
 
     boolean existsByIdentificationCode(String code);
 
-    Page<ServiceOrder> findAllByStatus(StatusServiceOrder status, Pageable pageable);
+    Page<ServiceOrder> findAllByStatusOrderByDateTimeStartAsc(StatusServiceOrder status, Pageable pageable);
 
     boolean existsByStatus(StatusServiceOrder status);
 }

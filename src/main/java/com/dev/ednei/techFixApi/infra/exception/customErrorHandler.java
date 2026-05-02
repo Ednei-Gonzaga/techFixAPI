@@ -1,6 +1,7 @@
 package com.dev.ednei.techFixApi.infra.exception;
 
 import com.dev.ednei.techFixApi.infra.exception.errors.EntityNotFoundException;
+import com.dev.ednei.techFixApi.infra.exception.errors.ForbiddenOperationException;
 import com.dev.ednei.techFixApi.infra.exception.errors.InvalidParameterException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -46,6 +47,16 @@ public class customErrorHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
+
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity handlerForbiddenOperation(ForbiddenOperationException ex){
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage());
+        problemDetail.setTitle("action not permitted by business rule");
+        problemDetail.setInstance(URI.create("/techfix-api/action-not-permitted"));
+
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(problemDetail);
+    }
+
 
     private record  DataError400(String field, String message){
         public DataError400(FieldError error){

@@ -5,6 +5,7 @@ import com.dev.ednei.techFixApi.infra.exception.errors.CustomAuthenticationEntry
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,7 +36,9 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/clients/**").hasRole("ADMIN")
+                        .requestMatchers("/api/service-requests/*").hasAnyRole("ADMIN", "TECHNICIAN")
                         .requestMatchers("/api/service-requests/**").hasRole("ADMIN")
+                        .requestMatchers("/api/service-orders").hasRole("ADMIN")
                         .requestMatchers("/api/service-orders/tracking/**").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
                         .anyRequest().authenticated()

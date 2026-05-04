@@ -1,6 +1,7 @@
 package com.dev.ednei.techFixApi.service;
 
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderCreateDTO;
+import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderForClientDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderFullDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderUpdateDTO;
 import com.dev.ednei.techFixApi.infra.exception.errors.EntityNotFoundException;
@@ -16,7 +17,6 @@ import com.dev.ednei.techFixApi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -72,13 +72,23 @@ public class ServiceOrderService {
     }
 
     public Page<ServiceOrderFullDTO> findTasksTechnicalByStatus(User technical, String status, Pageable pageable) {
-        if(StatusServiceOrder.fromString(status) == null){
+        if (StatusServiceOrder.fromString(status) == null) {
             throw new InvalidParameterException("O status " + status + " não existe");
         }
 
         var serviceOrder = repository.findAllByUserIdAndStatus(technical.getId(), StatusServiceOrder.fromString(status), pageable);
 
         return serviceOrder.map(ServiceOrderFullDTO::new);
+    }
+
+    public ServiceOrderForClientDTO findByCode(String code) {
+        var serviceOrder = repository.findByIdentificationCode(code);
+
+        if (serviceOrder.isEmpty()) {
+            throw new EntityNotFoundException("Ordem Serviço com codigo de indentificação " + code + " não encontrado");
+        }
+
+        return new ServiceOrderForClientDTO(serviceOrder.get());
     }
 
     @Transactional
@@ -93,13 +103,18 @@ public class ServiceOrderService {
 
     }
 
-
     @Transactional
-    public void updateServiceOrder(Long idServiceOrder, ServiceOrderUpdateDTO serviceDTO) {
+    public void updateServiceOrder(Long idServiceOrder, ServiceOrderUpdateDTO serviceDTO, User userLogged) {
         var serviceOrder = repository.findById(idServiceOrder);
 
         if (serviceOrder.isEmpty()) {
             throw new EntityNotFoundException("Ordem de Serviço com ID " + idServiceOrder + " não encontrado");
+        }
+
+        if (serviceOrder.get().getUser() != null) {
+            if (serviceOrder.get().getUser().getId() != userLogged.getId()) {
+                throw new ForbiddenOperationException("Essa Ordem de serviço nao esta atribuida ao usuario com ID " + userLogged.getId());
+            }
         }
 
         if (serviceDTO.user() != null) {
@@ -131,7 +146,6 @@ public class ServiceOrderService {
         serviceOrder.get().updateServiceOrder(serviceDTO);
         repository.save(serviceOrder.get());
     }
-
 
     private String generateIdentificationCode() {
         Random random = new Random();

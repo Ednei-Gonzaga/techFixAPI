@@ -41,6 +41,9 @@ public class ServiceOrder {
     @Column(name = "date_time_completed")
     private LocalDateTime dateTimeCompleted;
 
+    @Column(name = "date_time_update_status")
+    private LocalDateTime dateTimeUpdateStatus;
+
     public ServiceOrder(ServiceOrderCreateDTO serviceDTO, String code) {
         this.serviceRequest = new ServiceRequest(serviceDTO.serviceRequest());
         this.identificationCode = code;
@@ -57,10 +60,14 @@ public class ServiceOrder {
 
         if (StringUtils.hasText(serviceDTO.status())) {
             this.status = StatusServiceOrder.fromString(serviceDTO.status());
+            dateTimeUpdateStatus = LocalDateTime.now();
         }
 
         if ((StatusServiceOrder.fromString(serviceDTO.status()) == StatusServiceOrder.COMPLETED) || (StatusServiceOrder.fromString(serviceDTO.status()) == StatusServiceOrder.CANCELED)) {
             this.dateTimeCompleted = LocalDateTime.now();
+        }else{
+            this.dateTimeCompleted = null;
         }
+
     }
 }

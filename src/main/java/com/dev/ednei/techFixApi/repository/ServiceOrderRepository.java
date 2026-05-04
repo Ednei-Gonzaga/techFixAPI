@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long> {
 
 
@@ -18,4 +20,6 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
      Page<ServiceOrder> findAllByUserId(Long id, Pageable pageable);
 
     Page<ServiceOrder> findAllByUserIdAndStatus(Long id, StatusServiceOrder status, Pageable pageable);
+
+    Optional<ServiceOrder> findByIdentificationCode(String code);
 }

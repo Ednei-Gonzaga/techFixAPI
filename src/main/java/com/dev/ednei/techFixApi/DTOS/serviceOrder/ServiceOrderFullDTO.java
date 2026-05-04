@@ -17,7 +17,9 @@ public record ServiceOrderFullDTO(
 
         LocalDateTime dateTimeStart,
 
-        LocalDateTime dateTimeCompleted
+        LocalDateTime dateTimeCompleted,
+
+        LocalDateTime dateTimeUpdateStatus
 ) {
     public ServiceOrderFullDTO(ServiceOrder serviceOrder) {
         this(
@@ -27,7 +29,8 @@ public record ServiceOrderFullDTO(
                 serviceOrder.getStatus().portugueseOption,
                 serviceOrder.getIdentificationCode(),
                 serviceOrder.getDateTimeStart() ,
-                serviceOrder.getDateTimeCompleted()
+                serviceOrder.getDateTimeCompleted(),
+                serviceOrder.getDateTimeUpdateStatus()
         );
     }
 }

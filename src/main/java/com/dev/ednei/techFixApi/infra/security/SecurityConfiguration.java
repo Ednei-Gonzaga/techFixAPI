@@ -1,5 +1,7 @@
 package com.dev.ednei.techFixApi.infra.security;
 
+import com.dev.ednei.techFixApi.infra.exception.errors.CustomAccessDaniedHandlerException;
+import com.dev.ednei.techFixApi.infra.exception.errors.CustomAuthenticationEntryPointException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +21,12 @@ public class SecurityConfiguration {
     @Autowired
     private SercurityFilter sercurityFilter;
 
+    @Autowired
+    private CustomAccessDaniedHandlerException customAccessDaniedHandlerException;
+
+    @Autowired
+    private CustomAuthenticationEntryPointException customAuthenticationEntryPoint;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
@@ -32,6 +40,9 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(ex ->
+                        ex.accessDeniedHandler(customAccessDaniedHandlerException)
+                                .authenticationEntryPoint(customAuthenticationEntryPoint))
                 .addFilterBefore(sercurityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -42,7 +53,7 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }

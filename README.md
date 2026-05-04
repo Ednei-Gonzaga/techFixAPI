@@ -32,7 +32,8 @@ A API foi projetada simulando o fluxo real de uma assistência técnica. Todas a
     * **Descrição:** Autentica um usuário (Admin ou Técnico) no sistema.
     * **Retorno:** Token JWT utilizado para acessar as rotas protegidas.
 
-### 👤 2. Gestão de Clientes (Acessivel somente para usuarios Admin)
+### 👤 2. Gestão de Clientes
+Acessivel somente para Role ADMIN.
 * **`POST`** `/api/clients`
     * **Descrição:** Cadastra um novo cliente no sistema.
 * **`GET`** `/api/clients?cpf={cpf}`
@@ -70,16 +71,16 @@ Esta seção gerencia a entrada de aparelhos na assistência técnica. O registr
     * **Descrição:** Registra a entrada de um aparelho defeituoso. O sistema vincula o equipamento ao cliente e **gera automaticamente** uma Ordem de Serviço (Service Order) com status `PENDING`, enviando-a para a fila da bancada.
 
 ### ⚙️ 4. Ordens de Serviço (Bancada dos Técnicos)
-O fluxo da bancada utiliza um sistema *Pull* (semelhante ao Kanban), onde o técnico tem autonomia para assumir as tarefas. **Nota arquitetural:** Não há rota `POST` neste endpoint, pois a Ordem de Serviço é gerada de forma automatizada no momento em que a Recepção cria uma `ServiceRequest`.
+O técnico tem autonomia para assumir as tarefas. **Nota arquitetural:** Não há rota `POST` neste endpoint, pois a Ordem de Serviço é gerada de forma automatizada no momento em que a Recepção cria uma `ServiceRequest`.
 
 * **`GET`** `/api/service-orders`
     * **Descrição:** Visão gerencial (Admin). Lista todas as ordens de serviço da loja (com paginação).
     * **Filtro opcional:** Aceita o parâmetro `?status={status}` para buscar manutenções em estados específicos.
 * **`GET`** `/api/service-orders/pending`
-    * **Descrição:** Rota da "Piscina de Tarefas". Retorna todas as ordens que acabaram de chegar do balcão e possuem o status `PENDING`, prontas para serem assumidas.
+    * **Descrição:** Retorna todas as ordens que acabaram de chegar do balcão e possuem o status `PENDING`, prontas para serem assumidas.
 * **`GET`** `/api/service-orders/my-tasks`
     * **Descrição:** Retorna a bancada pessoal do técnico logado (injetado via Token JWT). Exibe apenas as manutenções que ele assumiu.
-    * **Filtro opcional:** Aceita o parâmetro `?status={status}` para o técnico filtrar suas próprias tarefas (ex: buscar apenas as que estão aguardando peça).
+    * **Filtro opcional:** Aceita o parâmetro `?status={status}` para o técnico filtrar suas próprias tarefas (ex: buscar apenas as que estão em analise).
 * **`PATCH`** `/api/service-orders/{idServiceOrder}`
     * **Descrição:** Atualiza o status da Ordem de Serviço. É utilizada para o técnico iniciar a manutenção, momento em que o sistema captura o seu Token e o vincula como responsável oficial pelo conserto.
 

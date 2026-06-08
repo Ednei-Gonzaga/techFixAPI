@@ -1,108 +1,39 @@
 package com.dev.ednei.techFixApi.model;
 
-import com.dev.ednei.techFixApi.DTOS.user.UserCreateDTO;
-import com.dev.ednei.techFixApi.DTOS.user.UserUpdateDTO;
-import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.util.StringUtils;
 
-import java.util.Collection;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
-@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements UserDetails {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     private Long id;
-
-    private String name;
 
     private String login;
 
     private String password;
 
-    @Enumerated(value = EnumType.STRING)
-    private RoleUser role;
+    private boolean status;
 
-    private Boolean status;
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
 
-    @OneToMany(mappedBy = "user")
-    private List<ServiceOrder> serviceOrderList;
+    @Column(name = "created_date")
+    private  LocalDateTime createdDate;
 
-    public User(UserCreateDTO userDTO) {
-        this.name = userDTO.name();
-        this.login = userDTO.login();
-        this.password = userDTO.password();
-        this.role = RoleUser.fromString(userDTO.role());
-        this.status = true;
-    }
+    @Column(name = "updated_date")
+    private LocalDateTime updatedDate;
 
-    public User(Long id) {
-        this.id = id;
-    }
+    @OneToOne(mappedBy = "idUser")
+    private Employee employee;
 
-    public void updateUser(UserUpdateDTO dto) {
-
-        if (StringUtils.hasText(dto.name())) {
-            this.name = dto.name();
-        }
-
-        if (StringUtils.hasText(dto.login())) {
-            this.login =(dto.login());
-        }
-
-        if (StringUtils.hasText(dto.password())) {
-            this.password = dto.password();
-        }
-    }
-
-    public void disableUser(){
-        this.status = false;
-    }
-
-    public void alterPasswordHashCode(String password){
-        this.password = password;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
-    }
-
-    @Override
-    public String getUsername() {
-        return this.login;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
-    }
+    @OneToMany(mappedBy = "idUserTechnical")
+    private List<ServiceOrder> serviceOrder;
 }

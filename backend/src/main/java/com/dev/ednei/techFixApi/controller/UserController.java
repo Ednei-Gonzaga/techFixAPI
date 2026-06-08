@@ -5,6 +5,7 @@ import com.dev.ednei.techFixApi.DTOS.user.UserDisableDTO;
 import com.dev.ednei.techFixApi.DTOS.user.UserResumeDTO;
 import com.dev.ednei.techFixApi.DTOS.user.UserUpdateDTO;
 import com.dev.ednei.techFixApi.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/users")
+@SecurityRequirement(name = "bearer-key")
 public class UserController {
     @Autowired
     private UserService service;

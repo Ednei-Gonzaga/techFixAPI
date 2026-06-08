@@ -6,6 +6,7 @@ import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderUpdateDTO;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.model.enums.StatusServiceOrder;
 import com.dev.ednei.techFixApi.service.ServiceOrderService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/service-orders")
+@SecurityRequirement(name = "bearer-key")
 public class ServiceOrderController {
 
     @Autowired

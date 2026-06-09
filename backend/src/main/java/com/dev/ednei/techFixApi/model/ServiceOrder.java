@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "service_orders")
@@ -16,8 +17,8 @@ public class ServiceOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "indentification_code")
-    private String indentificationCode;
+    @Column(name = "identification_code")
+    private String identificationCode;
 
     private ServiceOrderStatus status;
 
@@ -32,12 +33,22 @@ public class ServiceOrder {
 
     @ManyToOne
     @JoinColumn(name = "id_service_request")
-    private ServiceRequests idServiceRequest;
+    private ServiceRequests serviceRequest;
 
     @ManyToOne
     @JoinColumn(name = "id_user_technical")
-    private User idUserTechnical;
+    private User userTechnical;
 
-    @OneToOne(mappedBy = "idServiceOrder")
+    @OneToOne(mappedBy = "serviceOrder")
     private Payment payment;
+
+    @OneToMany(mappedBy = "serviceOrder")
+    private List<ServiceOrderItem> serviceOrderItem;
+
+    @OneToMany(mappedBy = "serviceOrder")
+    private List<ServiceOrderTask> serviceOrderTasks;
+
+    @OneToMany(mappedBy = "serviceOrder")
+    private List<ServiceOrderHistory> serviceOrderHistory;
+
 }

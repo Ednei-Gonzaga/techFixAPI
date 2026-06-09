@@ -29,9 +29,9 @@ public class ServiceRequests {
 
     @ManyToOne
     @JoinColumn(name = "id_client")
-    private Client idClient;
+    private Client client;
 
-    @OneToMany(mappedBy = "idServiceRequest")
+    @OneToMany(mappedBy = "serviceRequest")
     private List<ServiceOrder> serviceOrder;
 
 }

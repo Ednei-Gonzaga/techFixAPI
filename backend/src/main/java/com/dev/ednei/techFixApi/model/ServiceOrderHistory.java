@@ -1,6 +1,6 @@
 package com.dev.ednei.techFixApi.model;
 
-import com.dev.ednei.techFixApi.model.enums.PaymentStatus;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -8,33 +8,31 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payments_history")
+@Table(name = "service_order_history")
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentsHistory {
+public class ServiceOrderHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "id_payment")
-    private Payment idPayment;
+    @JoinColumn(name = "id_service_order")
+    private ServiceOrder serviceOrder;
 
     @ManyToOne
     @JoinColumn(name = "id_user")
     private User user;
 
     @Column(name = "old_status")
-    private PaymentStatus oldStatus;
+    private String oldStatus;
 
     @Column(name = "new_status")
-    private PaymentStatus newStatus;
-
-    @Column(name = "transaction_amount")
-    private Double transactionAmount;
+    private String newStatus;
 
     private String notes;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
 }

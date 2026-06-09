@@ -34,6 +34,19 @@ public class User {
     @OneToOne(mappedBy = "idUser")
     private Employee employee;
 
-    @OneToMany(mappedBy = "idUserTechnical")
+    @OneToMany(mappedBy = "userTechnical")
     private List<ServiceOrder> serviceOrder;
+
+    @OneToMany(mappedBy = "user")
+    private List<ServiceOrderTask> serviceOrderTasks;
+
+    @OneToMany(mappedBy = "user")
+    private List<ServiceOrderHistory> serviceOrderHistory;
+
+    @OneToMany(mappedBy = "user")
+    private List<VerificationCodes> verificationCodes;
+
+    @OneToMany(mappedBy = "user")
+    private List<PaymentsHistory> paymentsHistory;
+
 }

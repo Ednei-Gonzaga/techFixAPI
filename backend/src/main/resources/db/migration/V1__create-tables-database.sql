@@ -42,7 +42,7 @@ CREATE TABLE service_requests
 CREATE TABLE service_orders
 (
     id                      BIGSERIAL PRIMARY KEY,
-    indentification_code    VARCHAR(9) UNIQUE NOT NULL,
+    identification_code    VARCHAR(9) UNIQUE NOT NULL,
     status                  VARCHAR(40)       NOT NULL,
     date_time_start         TIMESTAMP         NOT NULL,
     date_time_completed     TIMESTAMP,

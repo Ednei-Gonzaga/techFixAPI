@@ -39,5 +39,5 @@ public class Payment {
 
     @OneToOne
     @JoinColumn(name = "id_service_order")
-    private ServiceOrder idServiceOrder;
+    private ServiceOrder serviceOrder;
 }

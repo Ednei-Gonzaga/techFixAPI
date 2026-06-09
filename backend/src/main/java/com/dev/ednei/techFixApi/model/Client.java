@@ -7,11 +7,13 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Table(name = "clients")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Client extends PeopleData {
     @OneToMany(mappedBy = "client")
-    private ServiceRequests serviceRequests;
+    private List<ServiceRequests> serviceRequests;
 }

@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "clients")
+@Table(name = "employees")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Employee extends PeopleData {

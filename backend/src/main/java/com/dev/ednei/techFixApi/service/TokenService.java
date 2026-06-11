@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.dev.ednei.techFixApi.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -12,11 +13,12 @@ public class TokenService {
     @Value("${PASSWORD_TOKEN}")
     private String passwordTokenAlgorithm;
 
-    public String createTokenJwt( ){
+    public String createTokenJwt(User user){
         try {
             Algorithm algorithm = Algorithm.HMAC256(passwordTokenAlgorithm);
             return JWT.create()
                     .withIssuer("techFix-api")
+                    .withSubject(user.getId().toString())
                     .sign(algorithm);
         } catch (JWTCreationException exception){
             throw new JWTCreationException("Houve um erro ao gerar token jwt", exception);
@@ -36,6 +38,4 @@ public class TokenService {
             throw new JWTVerificationException("Token invalido ou expirado");
         }
     }
-
-
 }

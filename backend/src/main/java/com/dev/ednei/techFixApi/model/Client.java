@@ -16,4 +16,5 @@ import java.util.List;
 public class Client extends PeopleData {
     @OneToMany(mappedBy = "client")
     private List<ServiceRequests> serviceRequests;
+
 }

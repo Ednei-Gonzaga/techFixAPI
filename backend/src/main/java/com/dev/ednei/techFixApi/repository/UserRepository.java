@@ -18,4 +18,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
             WHERE u.id = :id 
        """)
     UserDetails findByIdForAuthentication(@Param("id") Long id);
+
 }

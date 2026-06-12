@@ -1,5 +1,6 @@
 package com.dev.ednei.techFixApi.model;
 
+import com.dev.ednei.techFixApi.DTOS.user.UserCreateDTO;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -61,6 +62,14 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user")
     private List<PaymentsHistory> paymentsHistory;
 
+    public User(UserCreateDTO userCreateDTO, String password) {
+        this.login = userCreateDTO.cpf();
+        this.password = password;
+        this.status = true;
+        this.createdAt = LocalDateTime.now();
+        this.role = RoleUser.forValue(userCreateDTO.role());
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<SimpleGrantedAuthority> roles = new ArrayList<>();
@@ -101,4 +110,6 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
     }
+
+
 }

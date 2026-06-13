@@ -19,4 +19,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
        """)
     UserDetails findByIdForAuthentication(@Param("id") Long id);
 
+    @Query("""
+            SELECT u 
+            FROM Users u
+            JOIN u.employee e
+            WHERE e.email = :emailEmployee    
+            """)
+    User findByEmailOfEmployee(@Param("emailEmployee") String emailEmployee);
 }

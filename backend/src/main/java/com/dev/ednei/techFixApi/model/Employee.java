@@ -17,12 +17,12 @@ public class Employee extends PeopleData {
 
     @OneToOne
     @JoinColumn(name = "id_user")
-    private User idUser;
+    private User user;
 
     public Employee(UserCreateDTO userCreateDTO, User user) {
         super(userCreateDTO.name(), userCreateDTO.cpf(), userCreateDTO.phone(), userCreateDTO.whatsapp());
         this.email = userCreateDTO.email();
-        this.idUser = user;
+        this.user = user;
     }
 
 

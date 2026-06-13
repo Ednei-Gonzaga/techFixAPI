@@ -44,7 +44,7 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private RoleUser role;
 
-    @OneToOne(mappedBy = "idUser")
+    @OneToOne(mappedBy = "user")
     private Employee employee;
 
     @OneToMany(mappedBy = "userTechnical")
@@ -68,6 +68,10 @@ public class User implements UserDetails {
         this.status = true;
         this.createdAt = LocalDateTime.now();
         this.role = RoleUser.forValue(userCreateDTO.role());
+    }
+
+    public User(Long idUser) {
+        this.id = idUser;
     }
 
     @Override
@@ -112,4 +116,7 @@ public class User implements UserDetails {
     }
 
 
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
 }

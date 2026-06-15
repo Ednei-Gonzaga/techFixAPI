@@ -2,12 +2,11 @@ package com.dev.ednei.techFixApi.infra.exceptions;
 
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.dev.ednei.techFixApi.infra.exceptions.errors.AccessForbiddenException;
-import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
-import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -56,4 +55,25 @@ public class RestExceptionHandler {
         problemDetail.setInstance(URI.create("/src/techFix-api"));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
     }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity handlerMethodArgumentNotValidException(MethodArgumentNotValidException ex){
+        var errors = ex.getFieldErrors().stream().map(ModelBeanValidationClass::new).toList();
+
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Um ou mais campos estão invalidos");
+        problemDetail.setTitle("Invalid Parameter");
+        problemDetail.setInstance(URI.create("/src/techFix-api"));
+        problemDetail.setProperty("errors", errors);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    }
+
+    @ExceptionHandler(ConflictDataException.class)
+    public ResponseEntity handlerConflictDataException(ConflictDataException ex){
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problemDetail.setTitle("Conflict Data");
+        problemDetail.setInstance(URI.create("/src/techFix-api"));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
+    }
+
 }

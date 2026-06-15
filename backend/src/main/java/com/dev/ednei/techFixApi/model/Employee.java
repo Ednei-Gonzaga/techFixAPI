@@ -1,11 +1,14 @@
 package com.dev.ednei.techFixApi.model;
 
+import com.dev.ednei.techFixApi.DTOS.employees.EmployeeManagerUpdateDTO;
+import com.dev.ednei.techFixApi.DTOS.employees.EmployeeProfileUpdateDTO;
 import com.dev.ednei.techFixApi.DTOS.user.UserCreateDTO;
 import com.dev.ednei.techFixApi.model.dataModeling.PeopleData;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.flywaydb.core.internal.util.StringUtils;
 
 @Entity
 @Table(name = "employees")
@@ -26,4 +29,35 @@ public class Employee extends PeopleData {
     }
 
 
+    public void updateById(EmployeeManagerUpdateDTO dto) {
+        if (StringUtils.hasText(dto.name())) {
+            this.setName(dto.name());
+        }
+        if (StringUtils.hasText(dto.cpf())) {
+            this.setCpf(dto.cpf());
+        }
+        if (StringUtils.hasText(dto.phone())) {
+            this.setPhone(dto.phone());
+        }
+        if (StringUtils.hasText(dto.whatsapp())) {
+            this.setWhatsapp(dto.whatsapp());
+        }
+        if (StringUtils.hasText(dto.email())) {
+            this.email = dto.email();
+
+        }
+    }
+
+    public void updateByEmployeeLogged(EmployeeProfileUpdateDTO dto) {
+        if (StringUtils.hasText(dto.phone())) {
+            this.setPhone(dto.phone());
+        }
+        if (StringUtils.hasText(dto.whatsapp())) {
+            this.setWhatsapp(dto.whatsapp());
+        }
+        if (StringUtils.hasText(dto.email())) {
+            this.email = dto.email();
+
+        }
+    }
 }

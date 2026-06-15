@@ -10,6 +10,7 @@ public record EmployeeFullDTO(
         String whatsapp,
         String email,
         Long user
+
 ) {
     public EmployeeFullDTO(Employee employee) {
         this(employee.getId(), employee.getName(), employee.getCpf(), employee.getPhone(), employee.getWhatsapp(), employee.getEmail(), employee.getUser().getId());

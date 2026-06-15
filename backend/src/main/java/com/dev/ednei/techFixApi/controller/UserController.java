@@ -36,4 +36,9 @@ public class UserController {
     }
 
 
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity disableUser(@PathVariable("id") Long id) {
+        userService.disableUser(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }

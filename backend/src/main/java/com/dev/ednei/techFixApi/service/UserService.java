@@ -4,6 +4,7 @@ import com.dev.ednei.techFixApi.DTOS.user.RequestResetPasswordUser;
 import com.dev.ednei.techFixApi.DTOS.user.UserCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.user.UserResumeDTO;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.AccessForbiddenException;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.ConflictDataException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.model.Employee;
@@ -48,6 +49,14 @@ public class UserService {
         var user = new User(userCreateDTO, bCryptPasswordEncoder.encode(passwordDefault));
         var employee = new Employee(userCreateDTO, user);
 
+        if(employeeRepository.existsByEmail(employee.getEmail())) {
+            throw new ConflictDataException("Já existe um usuario cadastrado com esse email");
+        }
+
+        if (employeeRepository.existsByCpf(employee.getCpf())) {
+            throw new ConflictDataException("Já existe  um usuario cadastrado com esse CPF");
+        }
+
         repository.save(user);
         employeeRepository.save(employee);
 
@@ -86,6 +95,19 @@ public class UserService {
         }
     }
 
+    @Transactional
+    public void disableUser(Long idUser) {
+        var user =  repository.findById(idUser);
+
+        if(user.isEmpty()){
+            throw new EntityNotFoundException("Não foi encontrado nenhum usuario com ID "+idUser);
+        }
+
+        user.get().disableUser();
+        repository.save(user.get());
+    }
+
+    //Methods private
     @Transactional
     private void updateNotLoggedInUserPassword(RequestResetPasswordUser requestResetPasswordUser) {
         var user = repository.findByEmailOfEmployee(requestResetPasswordUser.email());
@@ -130,7 +152,9 @@ public class UserService {
         user.updatePassword(bCryptPasswordEncoder.encode(requestResetPasswordUser.newPassword()));
         repository.save(user);
 
-        sendMessageSuccessUpdatePassword(requestResetPasswordUser.email());
+        var employeeUser = employeeRepository.findByUserId(user.getId());
+
+        sendMessageSuccessUpdatePassword(employeeUser.get().getEmail());
 
     }
 

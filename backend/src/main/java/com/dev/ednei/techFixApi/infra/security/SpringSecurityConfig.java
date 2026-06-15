@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.infra.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,6 +27,12 @@ public class SpringSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v2/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/v2/employees/me").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
+                        .requestMatchers(HttpMethod.GET, "/api/v2/employees/me").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
+                        .requestMatchers(HttpMethod.POST, "/api/v2/employees/search/cpf").hasAnyRole("MANAGER", "ATTENDANT")
+                        .requestMatchers(HttpMethod.GET, "/api/v2/employees/*").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/v2/employees/*").hasRole("MANAGER")
+                        .requestMatchers( "/api/v2/employees").hasRole("MANAGER")
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

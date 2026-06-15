@@ -17,6 +17,6 @@ public record UserResumeDTO(
         String email
 ) {
     public UserResumeDTO(Employee employee) {
-        this(employee.getIdUser().getRole().name(), employee.getName(), employee.getCpf(), employee.getPhone(), employee.getWhatsapp(), employee.getEmail());
+        this(employee.getUser().getLogin(),  employee.getName(), employee.getCpf(), employee.getPhone(), employee.getWhatsapp(), employee.getEmail());
     }
 }

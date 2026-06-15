@@ -41,4 +41,8 @@ public class VerificationCodes {
         this.user = userLogin;
 
     }
+
+    public void updateStatusUsed() {
+        this.status = StatusVerificationCode.USED;
+    }
 }

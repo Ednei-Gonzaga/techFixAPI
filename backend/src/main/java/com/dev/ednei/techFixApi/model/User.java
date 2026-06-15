@@ -119,4 +119,12 @@ public class User implements UserDetails {
     public void updatePassword(String newPassword) {
         this.password = newPassword;
     }
+
+    public void registerLastLogin() {
+        this.lastLogin = LocalDateTime.now();
+    }
+
+    public void registerUpdatedAt() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

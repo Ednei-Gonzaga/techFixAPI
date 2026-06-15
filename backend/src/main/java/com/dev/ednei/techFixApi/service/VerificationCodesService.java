@@ -28,16 +28,22 @@ public class VerificationCodesService {
     @Transactional
     public VerificationCodesResumeDTO saveVerificationCodes(UserEmailResetPassword userEmailResetPassword){
         var code = generateCode();
-        String textEmail = "Se você solicitou uma redefinição de senha para " + userEmailResetPassword.email()
-                + ", use o código de confirmação abaixo para concluir o processo. Se você não fez essa solicitação, ignore este e-mail.\n\n"
-                + "Código de Verificação: " + code + "\n\n";
-
         var userEmployee = employeeService.findByEmail(userEmailResetPassword.email());
 
         if(userEmployee == null) {
             throw  new EntityNotFoundException("Nâo foi possivel encontrar CADASTRO com esse email " + userEmailResetPassword.email());
         }
 
+        var checkExistsCodeUser = checkExistsCodeForUSer(code, userEmployee.user());
+
+        while (checkExistsCodeUser) {
+            code = generateCode();
+            checkExistsCodeUser = checkExistsCodeForUSer(code, userEmployee.user());
+        }
+
+        String textEmail = "Se você solicitou uma redefinição de senha para " + userEmailResetPassword.email()
+                + ", use o código de confirmação abaixo para concluir o processo. Se você não fez essa solicitação, ignore este e-mail.\n\n"
+                + "Código de Verificação: " + code + "\n\n";
         var userLogin = new User(userEmployee.user());
         var verificationCode = new VerificationCodes(code, userLogin);
 
@@ -50,8 +56,8 @@ public class VerificationCodesService {
     }
 
     @Transactional
-    public VerificationCodes findByCode(String code){
-        var verificationCodes = repository.findByCode(code);
+    public VerificationCodes findByCode(String code, Long userId){
+        var verificationCodes = repository.findByCodeAndUserId(code, userId);
 
         if(verificationCodes.isEmpty()){
             return null;
@@ -70,5 +76,14 @@ public class VerificationCodesService {
         }
 
         return code;
+    }
+
+    private boolean checkExistsCodeForUSer(String code, Long userId){
+        var existsCode = repository.findByCodeAndUserId(code, userId);
+
+        if(existsCode.isPresent()){
+            return true;
+        }
+        return false;
     }
 }

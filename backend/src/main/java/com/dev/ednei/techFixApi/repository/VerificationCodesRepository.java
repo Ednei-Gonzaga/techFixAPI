@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface VerificationCodesRepository extends JpaRepository<VerificationCodes, Long> {
     Optional<VerificationCodes> findByCode(String code);
+
+    Optional<VerificationCodes> findByCodeAndUserId(String code, Long userId);
 }

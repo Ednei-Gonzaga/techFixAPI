@@ -76,4 +76,11 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
     }
 
+    @ExceptionHandler(UnprocessableEntityException.class)
+    public ResponseEntity handlerUnprocessableEntityException(UnprocessableEntityException ex){
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage());
+        problemDetail.setTitle("Unprocessable Entity");
+        problemDetail.setInstance(URI.create("/src/techFix-api"));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(problemDetail);
+    }
 }

@@ -1,11 +1,16 @@
 package com.dev.ednei.techFixApi.model.dataModeling;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @MappedSuperclass
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public abstract class CatalogItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,8 +18,15 @@ public abstract class CatalogItem {
 
     private String name;
 
-    private Double cost_price;
+    @Column(name = "cost_price")
+    private Double costPrice;
 
     private boolean status;
+
+    public CatalogItem(String name, Double costPrice, boolean status) {
+        this.name = name;
+        this.costPrice = costPrice;
+        this.status = status;
+    }
 
 }

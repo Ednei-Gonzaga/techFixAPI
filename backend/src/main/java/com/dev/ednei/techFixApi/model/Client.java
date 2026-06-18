@@ -6,6 +6,7 @@ import com.dev.ednei.techFixApi.model.dataModeling.PeopleData;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -22,6 +23,10 @@ public class Client extends PeopleData {
 
     public Client(ClientCreateDTO clientCreateDto) {
         super(clientCreateDto.name(), clientCreateDto.cpf(), clientCreateDto.phone(),  clientCreateDto.whatsapp());
+    }
+
+    public Client(Long client) {
+        setId(client);
     }
 
     public void updateClient(ClientUpdateDTO clientDto) {

@@ -20,6 +20,7 @@ public class ServiceOrder {
     @Column(name = "identification_code")
     private String identificationCode;
 
+    @Enumerated(EnumType.STRING)
     private ServiceOrderStatus status;
 
     @Column(name = "date_time_start")
@@ -32,7 +33,7 @@ public class ServiceOrder {
     private LocalDateTime dateTimeUpdateStatus;
 
     @ManyToOne
-    @JoinColumn(name = "id_service_request")
+    @JoinColumn(name = "service_request")
     private ServiceRequests serviceRequest;
 
     @ManyToOne
@@ -51,4 +52,13 @@ public class ServiceOrder {
     @OneToMany(mappedBy = "serviceOrder")
     private List<ServiceOrderHistory> serviceOrderHistory;
 
+    public ServiceOrder(Long serviceRequestId, String code) {
+        this.serviceRequest = new ServiceRequests(serviceRequestId);
+        this.userTechnical = null;
+        this.identificationCode = code;
+        this.status = ServiceOrderStatus.PENDING;
+        this.dateTimeStart = LocalDateTime.now();
+        this.dateTimeCompleted = null;
+        this.dateTimeUpdateStatus = null;
+    }
 }

@@ -1,9 +1,13 @@
 package com.dev.ednei.techFixApi.model;
 
+import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderUpdateDTO;
 import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,6 +16,7 @@ import java.util.List;
 @Table(name = "service_orders")
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 public class ServiceOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,5 +65,23 @@ public class ServiceOrder {
         this.dateTimeStart = LocalDateTime.now();
         this.dateTimeCompleted = null;
         this.dateTimeUpdateStatus = null;
+    }
+
+    public void updateServiceOrder(@NonNull ServiceOrderUpdateDTO orderDto) {
+        if(orderDto.userTechnical() != null) {
+            this.userTechnical = new User(orderDto.userTechnical());
+            this.dateTimeUpdateStatus = LocalDateTime.now();
+        }
+
+        if(StringUtils.hasText(orderDto.status())){
+            this.status = ServiceOrderStatus.forValue(orderDto.status());
+            this.dateTimeUpdateStatus = LocalDateTime.now();
+        }
+
+        if(this.status == ServiceOrderStatus.COMPLETED ) {
+            this.dateTimeCompleted = LocalDateTime.now();
+        }else if (this.status != ServiceOrderStatus.DELIVERED) {
+            this.dateTimeCompleted = null;
+        }
     }
 }

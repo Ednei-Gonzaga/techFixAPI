@@ -5,18 +5,25 @@ import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderFullDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderUpdateDTO;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.AccessForbiddenException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.UnprocessableEntityException;
 import com.dev.ednei.techFixApi.model.ServiceOrder;
 import com.dev.ednei.techFixApi.model.User;
+import com.dev.ednei.techFixApi.model.enums.CategoryDevice;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
 import com.dev.ednei.techFixApi.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -54,14 +61,14 @@ public class ServiceOrderService {
             throw new UnprocessableEntityException("Para atualizar status é necessario atribuir o serviço a um técnico primeiro");
         }
 
-        if(orderDto.userTechnical() != null){
+        if (orderDto.userTechnical() != null) {
             var userTechnical = userRepository.findById(orderDto.userTechnical());
 
             if (userTechnical.isEmpty()) {
                 throw new EntityNotFoundException("Não foi possivel encontrar Tecnico com ID " + orderDto.userTechnical());
             }
 
-            if(userTechnical.get().getRole() != RoleUser.TECHNICAL){
+            if (userTechnical.get().getRole() != RoleUser.TECHNICAL) {
                 throw new UnprocessableEntityException("A ordem de serviço deve ser atribuida somente ao usuario do tipo Tecnico");
             }
         }
@@ -88,12 +95,12 @@ public class ServiceOrderService {
             }
 
             if (StringUtils.hasText(orderDto.status()) && ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.DELIVERED
-                    && serviceOrder.get().getStatus() != ServiceOrderStatus.COMPLETED ) {
+                    && serviceOrder.get().getStatus() != ServiceOrderStatus.COMPLETED) {
                 throw new AccessForbiddenException("Atendente só pode atualizar para Entregue a Ordem de Serviço se status for Completado");
             }
         }
 
-        serviceOrder.get().updateServiceOrder( orderDto);
+        serviceOrder.get().updateServiceOrder(orderDto);
         repository.save(serviceOrder.get());
         return new ServiceOrderFullDTO(serviceOrder.get());
     }
@@ -120,9 +127,121 @@ public class ServiceOrderService {
         return serviceOrderDetails.get();
     }
 
-   public ServiceOrderDetailDTO findDetailsByUserTechnical(String code){
+    public Page<ServiceOrderDetailDTO> findAllOrAllByFilter(String status, String category, Pageable pageable) {
+        Page<ServiceOrderDetailDTO> serviceOrders = null;
+        List<ServiceOrderStatus> listStatus;
+        List<CategoryDevice> listCategory;
 
-   }
+        if (!StringUtils.hasText(status) && !StringUtils.hasText(category)) {
+            listStatus = Arrays.stream(ServiceOrderStatus.values())
+                    .filter(s -> s != ServiceOrderStatus.CANCELED
+                            && s != ServiceOrderStatus.DELIVERED
+                            && s != ServiceOrderStatus.COMPLETED)
+                    .toList();
+            listCategory = List.of(CategoryDevice.values());
+
+            serviceOrders = repository.findAllOrAllByStatusActivesAndCategory(listStatus, listCategory, pageable);
+        }
+
+        checkStatusAndCategory(status, category);
+
+        if (!StringUtils.hasText(status) && StringUtils.hasText(category)) {
+            listStatus = Arrays.stream(ServiceOrderStatus.values())
+                    .filter(s -> s != ServiceOrderStatus.CANCELED
+                            && s != ServiceOrderStatus.DELIVERED
+                            && s != ServiceOrderStatus.COMPLETED)
+                    .toList();
+            listCategory = List.of(CategoryDevice.toString(category));
+
+            serviceOrders = repository.findAllOrAllByStatusActivesAndCategory(listStatus, listCategory, pageable);
+        }
+
+        if (StringUtils.hasText(status) && !StringUtils.hasText(category)) {
+            listStatus = List.of(ServiceOrderStatus.forValue(status));
+            listCategory = List.of(CategoryDevice.values());
+
+            if (listStatus.get(0) != ServiceOrderStatus.CANCELED && listStatus.get(0) != ServiceOrderStatus.DELIVERED && listStatus.get(0) != ServiceOrderStatus.COMPLETED) {
+
+                serviceOrders = repository.findAllOrAllByStatusActivesAndCategory(listStatus, listCategory, pageable);
+
+            } else {
+                serviceOrders = repository.findAllOrAllByStatusFinishAndCategory(listStatus, listCategory, pageable);
+            }
+        }
+
+        if (StringUtils.hasText(status) && StringUtils.hasText(category)) {
+            listStatus = List.of(ServiceOrderStatus.forValue(status));
+            listCategory = List.of(CategoryDevice.toString(category));
+
+            if (listStatus.get(0) != ServiceOrderStatus.CANCELED && listStatus.get(0) != ServiceOrderStatus.DELIVERED && listStatus.get(0) != ServiceOrderStatus.COMPLETED) {
+
+                serviceOrders = repository.findAllOrAllByStatusActivesAndCategory(listStatus, listCategory, pageable);
+
+            } else {
+                serviceOrders = repository.findAllOrAllByStatusFinishAndCategory(listStatus, listCategory, pageable);
+            }
+        }
+
+        return serviceOrders;
+    }
+
+    public Page<ServiceOrderDetailDTO> findMyTask(String status, String category, User user, Pageable pageable) {
+        Page<ServiceOrderDetailDTO> serviceOrders = null;
+        List<ServiceOrderStatus> listStatus;
+        List<CategoryDevice> listCategory;
+
+        if (!StringUtils.hasText(status) && !StringUtils.hasText(category)) {
+            listStatus = Arrays.stream(ServiceOrderStatus.values())
+                    .filter(s -> s != ServiceOrderStatus.CANCELED
+                            && s != ServiceOrderStatus.DELIVERED
+                            && s != ServiceOrderStatus.COMPLETED)
+                    .toList();
+            listCategory = List.of(CategoryDevice.values());
+
+            serviceOrders = repository.findAllOrAllByStatusActivesAndCategoryMyTask(listStatus, listCategory, user, pageable);
+        }
+
+        checkStatusAndCategory(status, category);
+
+        if (!StringUtils.hasText(status) && StringUtils.hasText(category)) {
+            listStatus = Arrays.stream(ServiceOrderStatus.values())
+                    .filter(s -> s != ServiceOrderStatus.CANCELED
+                            && s != ServiceOrderStatus.DELIVERED
+                            && s != ServiceOrderStatus.COMPLETED)
+                    .toList();
+            listCategory = List.of(CategoryDevice.toString(category));
+
+            serviceOrders = repository.findAllOrAllByStatusActivesAndCategoryMyTask(listStatus, listCategory, user, pageable);
+        }
+
+        if (StringUtils.hasText(status) && !StringUtils.hasText(category)) {
+            listStatus = List.of(ServiceOrderStatus.forValue(status));
+            listCategory = List.of(CategoryDevice.values());
+
+            if (listStatus.get(0) != ServiceOrderStatus.CANCELED && listStatus.get(0) != ServiceOrderStatus.DELIVERED && listStatus.get(0) != ServiceOrderStatus.COMPLETED) {
+
+                serviceOrders = repository.findAllOrAllByStatusActivesAndCategoryMyTask(listStatus, listCategory, user, pageable);
+
+            } else {
+                serviceOrders = repository.findAllOrAllByStatusFinishAndCategoryMyTask(listStatus, listCategory, user, pageable);
+            }
+        }
+
+        if (StringUtils.hasText(status) && StringUtils.hasText(category)) {
+            listStatus = List.of(ServiceOrderStatus.forValue(status));
+            listCategory = List.of(CategoryDevice.toString(category));
+
+            if (listStatus.get(0) != ServiceOrderStatus.CANCELED && listStatus.get(0) != ServiceOrderStatus.DELIVERED && listStatus.get(0) != ServiceOrderStatus.COMPLETED) {
+
+                serviceOrders = repository.findAllOrAllByStatusActivesAndCategoryMyTask(listStatus, listCategory, user, pageable);
+
+            } else {
+                serviceOrders = repository.findAllOrAllByStatusFinishAndCategoryMyTask(listStatus, listCategory, user, pageable);
+            }
+        }
+
+        return serviceOrders;
+    }
 
     private String generateCode() {
         var random = new Random();
@@ -134,5 +253,17 @@ public class ServiceOrderService {
         return code;
     }
 
+    private void checkStatusAndCategory(String status, String category) {
+        if (StringUtils.hasText(category)) {
+            if (CategoryDevice.toString(category) == null) {
+                throw new InvalidParameterException("Não existe a categoria '" + category + "'");
+            }
+        }
 
+        if (StringUtils.hasText(status)) {
+            if (ServiceOrderStatus.forValue(status) == null) {
+                throw new InvalidParameterException("Não existe  status com o nome '" + status + "'");
+            }
+        }
+    }
 }

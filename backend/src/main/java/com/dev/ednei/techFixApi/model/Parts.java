@@ -4,6 +4,7 @@ import com.dev.ednei.techFixApi.DTOS.part.PartCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.part.PartUpdateDTO;
 import com.dev.ednei.techFixApi.model.dataModeling.CatalogItem;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -54,4 +55,13 @@ public class Parts extends CatalogItem {
     public void recordQuantityUsed(Integer quantityUsed) {
         this.stockQuantity -= quantityUsed;
     }
+
+    public void dropInStock(Integer quantity) {
+        this.stockQuantity -= quantity;
+    }
+
+    public void returnToStock(Integer quantity) {
+        this.stockQuantity += quantity;
+    }
+
 }

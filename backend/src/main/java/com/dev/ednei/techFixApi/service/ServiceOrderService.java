@@ -93,12 +93,17 @@ public class ServiceOrderService {
             throw new InvalidParameterException("O status " + orderDto.status() +" não e valido");
         }
 
-        if (user.getRole() == RoleUser.TECHNICAL && ServiceOrderStatus.forValue(orderDto.status()) == (ServiceOrderStatus.DELIVERED)) {
-            throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para entregue");
+        if (user.getRole() == RoleUser.TECHNICAL){
+            if (ServiceOrderStatus.forValue(orderDto.status()) == (ServiceOrderStatus.DELIVERED)) {
+                throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Entregue");
+            }
+            if (ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED){
+                throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Cancelado");
+            }
         }
 
         if (user.getRole() == RoleUser.ATTENDANT) {
-            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.DELIVERED || ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED)) {
+            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.DELIVERED || ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.CANCELED)) {
                 throw new AccessForbiddenException("Usuario do tipo Atendente só pode atualizar Status para Entregue ou Cancelado");
             }
 

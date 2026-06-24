@@ -53,8 +53,6 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "userTechnical")
     private List<ServiceOrder> serviceOrder;
 
-    @OneToMany(mappedBy = "user")
-    private List<ServiceOrderTask> serviceOrderTasks;
 
     @OneToMany(mappedBy = "user")
     private List<ServiceOrderHistory> serviceOrderHistory;

@@ -3,11 +3,13 @@ package com.dev.ednei.techFixApi.service;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderDetailDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderFullDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderUpdateDTO;
+import com.dev.ednei.techFixApi.DTOS.serviceOrderHistory.ServiceOrderHistoryCreate;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.AccessForbiddenException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.UnprocessableEntityException;
 import com.dev.ednei.techFixApi.model.ServiceOrder;
+import com.dev.ednei.techFixApi.model.ServiceOrderHistory;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.model.enums.CategoryDevice;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
@@ -34,8 +36,11 @@ public class ServiceOrderService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ServiceOrderHistoryService serviceOrderHistoryService;
+
     @Transactional
-    public void saveServiceOrder(Long serviceRequestId) {
+    public void saveServiceOrder(Long serviceRequestId, User user) {
         var code = generateCode();
 
         while (repository.existsByIdentificationCode(code)) {
@@ -44,6 +49,11 @@ public class ServiceOrderService {
 
         ServiceOrder serviceOrder = new ServiceOrder(serviceRequestId, code);
         repository.save(serviceOrder);
+
+        var orderHistoryCreate = new ServiceOrderHistoryCreate(serviceOrder.getId(), user.getId(),
+                "Ordem de Serviço foi criada", ServiceOrderStatus.PENDING, ServiceOrderStatus.PENDING);
+
+        serviceOrderHistoryService.saveHistoryOrder(orderHistoryCreate);
     }
 
     @Transactional
@@ -54,6 +64,7 @@ public class ServiceOrderService {
             throw new EntityNotFoundException("Não foi possivel encontrar Ordem de Serviço com ID " + serviceOrderId);
         }
 
+        var oldStatus = serviceOrder.get().getStatus();
 
         if (orderDto.userTechnical() == null && serviceOrder.get().getUserTechnical() == null
                 && StringUtils.hasText(orderDto.status()) && serviceOrder.get().getStatus() == ServiceOrderStatus.PENDING
@@ -78,14 +89,16 @@ public class ServiceOrderService {
             throw new AccessForbiddenException("Soemente o usuario do tipo Gerente pode atualizar ID do tecnico depois que já foi atribuido a Ordem de Serviço");
         }
 
-        // Enum
+        if(orderDto.status() != null && ServiceOrderStatus.forValue(orderDto.status()) == null) {
+            throw new InvalidParameterException("O status " + orderDto.status() +" não e valido");
+        }
 
         if (user.getRole() == RoleUser.TECHNICAL && ServiceOrderStatus.forValue(orderDto.status()) == (ServiceOrderStatus.DELIVERED)) {
             throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para entregue");
         }
 
         if (user.getRole() == RoleUser.ATTENDANT) {
-            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.DELIVERED && ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.CANCELED)) {
+            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.DELIVERED || ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED)) {
                 throw new AccessForbiddenException("Usuario do tipo Atendente só pode atualizar Status para Entregue ou Cancelado");
             }
 
@@ -100,8 +113,21 @@ public class ServiceOrderService {
             }
         }
 
+
         serviceOrder.get().updateServiceOrder(orderDto);
         repository.save(serviceOrder.get());
+
+        if (StringUtils.hasText(orderDto.status())){
+            var newStatus = ServiceOrderStatus.forValue(orderDto.status());
+            if(oldStatus != newStatus) {
+                var notes = "Ordem de Serviço atualizada de " + oldStatus.portugueseOption.replace("_", " ") +" para " +  newStatus.portugueseOption.replace("_", " ");
+
+                var orderHistoryCreate = new ServiceOrderHistoryCreate(serviceOrder.get().getId(), user.getId(),
+                        notes, oldStatus, newStatus);
+                serviceOrderHistoryService.saveHistoryOrder(orderHistoryCreate);
+            }
+        }
+
         return new ServiceOrderFullDTO(serviceOrder.get());
     }
 

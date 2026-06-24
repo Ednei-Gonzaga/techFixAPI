@@ -6,6 +6,7 @@ import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestUpdateDTO;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.model.ServiceRequests;
+import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.model.enums.CategoryDevice;
 import com.dev.ednei.techFixApi.repository.ClientRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
@@ -29,7 +30,7 @@ public class ServiceRequestService {
     private ServiceOrderService serviceOrderService;
 
     @Transactional
-    public ServiceRequestFullDTO saveRequest(ServiceRequestCreateDTO requestDto) {
+    public ServiceRequestFullDTO saveRequest(ServiceRequestCreateDTO requestDto, User user) {
         if (!clientRepository.existsById(requestDto.client())) {
             throw new EntityNotFoundException("Cliente com ID  " + requestDto.client() + " não encontrado");
         }
@@ -41,7 +42,7 @@ public class ServiceRequestService {
         var serviceRequest = new ServiceRequests(requestDto);
         repository.save(serviceRequest);
 
-        serviceOrderService.saveServiceOrder(serviceRequest.getId());
+        serviceOrderService.saveServiceOrder(serviceRequest.getId(), user);
 
         return new ServiceRequestFullDTO(serviceRequest);
     }

@@ -67,6 +67,10 @@ public class ServiceOrder {
         this.dateTimeUpdateStatus = null;
     }
 
+    public ServiceOrder(Long id) {
+        this.id = id;
+    }
+
     public void updateServiceOrder(@NonNull ServiceOrderUpdateDTO orderDto) {
         if(orderDto.userTechnical() != null) {
             this.userTechnical = new User(orderDto.userTechnical());

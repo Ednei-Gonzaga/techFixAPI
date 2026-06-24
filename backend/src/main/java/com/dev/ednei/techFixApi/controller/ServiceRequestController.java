@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.controller;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestFullDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestUpdateDTO;
+import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.service.ServiceRequestService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -20,8 +22,8 @@ public class ServiceRequestController {
     private ServiceRequestService serviceRequestService;
 
     @PostMapping("/service-requests")
-    public ResponseEntity<ServiceRequestFullDTO> saveRequest(@RequestBody @Valid ServiceRequestCreateDTO requestDto){
-        var serviceRequest = serviceRequestService.saveRequest(requestDto);
+    public ResponseEntity<ServiceRequestFullDTO> saveRequest(@RequestBody @Valid ServiceRequestCreateDTO requestDto, @AuthenticationPrincipal User user) {
+        var serviceRequest = serviceRequestService.saveRequest(requestDto, user);
         return new ResponseEntity<>(serviceRequest, HttpStatus.OK);
     }
 

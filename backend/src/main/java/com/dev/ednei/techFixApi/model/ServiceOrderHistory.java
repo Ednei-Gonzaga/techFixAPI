@@ -1,6 +1,8 @@
 package com.dev.ednei.techFixApi.model;
 
 
+import com.dev.ednei.techFixApi.DTOS.serviceOrderHistory.ServiceOrderHistoryCreate;
+import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -25,14 +27,24 @@ public class ServiceOrderHistory {
     private User user;
 
     @Column(name = "old_status")
-    private String oldStatus;
+    @Enumerated(EnumType.STRING)
+    private ServiceOrderStatus oldStatus;
 
     @Column(name = "new_status")
-    private String newStatus;
+    @Enumerated(EnumType.STRING)
+    private ServiceOrderStatus newStatus;
 
     private String notes;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    public ServiceOrderHistory(ServiceOrderHistoryCreate history) {
+        this.serviceOrder = new ServiceOrder(history.serviceOrder());
+        this.user =  new User(history.user());
+        this.notes =  history.notes();
+        this.oldStatus =  history.oldStatus();
+        this.newStatus =  history.newStatus();
+        this.createdAt = LocalDateTime.now();
+    }
 }

@@ -8,4 +8,5 @@ import java.util.List;
 public interface ServiceOrderTaskRepository extends JpaRepository<ServiceOrderTask, Long> {
 
     List<ServiceOrderTask> findAllByServiceOrderId(Long serviceOrderId);
+
 }

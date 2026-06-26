@@ -39,6 +39,9 @@ public class ServiceOrderService {
     @Autowired
     private ServiceOrderHistoryService serviceOrderHistoryService;
 
+    @Autowired
+    private PaymentService paymentService;
+
     @Transactional
     public void saveServiceOrder(Long serviceRequestId, User user) {
         var code = generateCode();
@@ -89,15 +92,15 @@ public class ServiceOrderService {
             throw new AccessForbiddenException("Soemente o usuario do tipo Gerente pode atualizar ID do tecnico depois que já foi atribuido a Ordem de Serviço");
         }
 
-        if(orderDto.status() != null && ServiceOrderStatus.forValue(orderDto.status()) == null) {
-            throw new InvalidParameterException("O status " + orderDto.status() +" não e valido");
+        if (orderDto.status() != null && ServiceOrderStatus.forValue(orderDto.status()) == null) {
+            throw new InvalidParameterException("O status " + orderDto.status() + " não e valido");
         }
 
-        if (user.getRole() == RoleUser.TECHNICAL){
+        if (user.getRole() == RoleUser.TECHNICAL) {
             if (ServiceOrderStatus.forValue(orderDto.status()) == (ServiceOrderStatus.DELIVERED)) {
                 throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Entregue");
             }
-            if (ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED){
+            if (ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED) {
                 throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Cancelado");
             }
         }
@@ -118,20 +121,21 @@ public class ServiceOrderService {
             }
         }
 
-
         serviceOrder.get().updateServiceOrder(orderDto);
         repository.save(serviceOrder.get());
 
-        if (StringUtils.hasText(orderDto.status())){
+        if (StringUtils.hasText(orderDto.status())) {
             var newStatus = ServiceOrderStatus.forValue(orderDto.status());
-            if(oldStatus != newStatus) {
-                var notes = "Ordem de Serviço atualizada de " + oldStatus.portugueseOption.replace("_", " ") +" para " +  newStatus.portugueseOption.replace("_", " ");
+            if (oldStatus != newStatus) {
+                var notes = "Ordem de Serviço atualizada de " + oldStatus.portugueseOption.replace("_", " ") + " para " + newStatus.portugueseOption.replace("_", " ");
 
                 var orderHistoryCreate = new ServiceOrderHistoryCreate(serviceOrder.get().getId(), user.getId(),
                         notes, oldStatus, newStatus);
                 serviceOrderHistoryService.saveHistoryOrder(orderHistoryCreate);
             }
         }
+
+        processPayment(serviceOrder.get(), user);
 
         return new ServiceOrderFullDTO(serviceOrder.get());
     }
@@ -274,6 +278,8 @@ public class ServiceOrderService {
         return serviceOrders;
     }
 
+
+    // Metodos privados
     private String generateCode() {
         var random = new Random();
         String code = "";
@@ -294,6 +300,23 @@ public class ServiceOrderService {
         if (StringUtils.hasText(status)) {
             if (ServiceOrderStatus.forValue(status) == null) {
                 throw new InvalidParameterException("Não existe  status com o nome '" + status + "'");
+            }
+        }
+    }
+
+    private void processPayment(ServiceOrder serviceOrder, User user) {
+        if (serviceOrder.getStatus() == ServiceOrderStatus.COMPLETED) {
+            if (paymentService.existPaymentByServiceOrderId(serviceOrder.getId())) {
+                paymentService.autoAdjustPayment(serviceOrder.getId(), user);
+            } else {
+                paymentService.createPayment(serviceOrder.getId(), user);
+            }
+
+        }
+
+        if (serviceOrder.getStatus() == ServiceOrderStatus.CANCELED) {
+            if (paymentService.existPaymentByServiceOrderId(serviceOrder.getId())) {
+                paymentService.canceledPayments(serviceOrder.getId(), user);
             }
         }
     }

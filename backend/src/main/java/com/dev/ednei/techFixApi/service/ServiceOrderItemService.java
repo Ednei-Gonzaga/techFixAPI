@@ -122,7 +122,7 @@ public class ServiceOrderItemService {
 
         var serviceOrderItems = repository.findAllByServiceOrderId(id);
 
-        return serviceOrderItems .stream().map(ServiceOrderItemFullDTO::new).toList();
+        return serviceOrderItems.stream().map(ServiceOrderItemFullDTO::new).toList();
     }
 
     //Metodos privados para uso no proprio Service

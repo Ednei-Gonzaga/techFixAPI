@@ -1,5 +1,7 @@
 package com.dev.ednei.techFixApi.infra.security;
 
+import com.dev.ednei.techFixApi.infra.exceptions.errors.CustomAuthenticationEntryPoint;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.CustumAccessDeniedHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +21,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SpringSecurityConfig {
     @Autowired
     private SecurityFilter securityFilter;
+
+    @Autowired
+    private CustomAuthenticationEntryPoint  customAuthenticationEntryPoint;
+
+    @Autowired
+    private CustumAccessDeniedHandler custumAccessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -40,6 +48,9 @@ public class SpringSecurityConfig {
                         .requestMatchers("/api/v2/employees").hasRole("MANAGER")
                         .anyRequest().permitAll()
                 )
+                .exceptionHandling(ex ->
+                        ex.accessDeniedHandler(custumAccessDeniedHandler)
+                                .authenticationEntryPoint(customAuthenticationEntryPoint))
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

@@ -16,4 +16,5 @@ public interface ServiceCatalogRepository extends JpaRepository<ServiceCatalog, 
       WHERE s.name ILIKE %:name%
           """)
     Page<ServiceCatalog> findAllByName(@Param("name") String name, Pageable pageable);
+
 }

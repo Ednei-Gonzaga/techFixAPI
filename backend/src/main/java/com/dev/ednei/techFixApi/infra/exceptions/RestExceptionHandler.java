@@ -6,6 +6,8 @@ import com.dev.ednei.techFixApi.infra.exceptions.errors.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -82,5 +84,23 @@ public class RestExceptionHandler {
         problemDetail.setTitle("Unprocessable Entity");
         problemDetail.setInstance(URI.create("/src/techFix-api"));
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(problemDetail);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity handlerBadCredentialsException(BadCredentialsException ex){
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Usuário inexistente ou senha inválida");
+        problemDetail.setTitle("Bad Credentials");
+        problemDetail.setInstance(URI.create("/api/v2/auth/login"));
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problemDetail);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity handlerHttpMessageNotReadableException(HttpMessageNotReadableException ex){
+
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, " O corpo da requisição está inválido ou malformado. Verifique o formato dos dados enviados");
+        problemDetail.setTitle("Bad Request");
+        problemDetail.setInstance(URI.create("/texhFix-apiRest"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
 }

@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Optional;
+
 @Service
 public class PaymentService {
     @Autowired
@@ -148,6 +150,10 @@ public class PaymentService {
 
         String notes = "Pagamento CANCELADO automaticamente após o CANCELAMENTO da Ordem de Serviço";
         paymentsHistoryService.saveHistoryPayment(payment.get(), user, oldStatus, payment.get().getPaymentStatus(), notes);
+    }
+
+    public Optional<Payment> findByIdServiceOrderWithoutException(Long serviceOrderId) {
+        return repository.findByServiceOrderId(serviceOrderId);
     }
 
 

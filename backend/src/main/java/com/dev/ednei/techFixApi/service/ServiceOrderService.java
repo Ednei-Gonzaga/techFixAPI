@@ -9,18 +9,18 @@ import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.UnprocessableEntityException;
 import com.dev.ednei.techFixApi.model.ServiceOrder;
-import com.dev.ednei.techFixApi.model.ServiceOrderHistory;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.model.enums.CategoryDevice;
+import com.dev.ednei.techFixApi.model.enums.PaymentStatus;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
+import com.dev.ednei.techFixApi.repository.ServiceOrderTaskRepository;
 import com.dev.ednei.techFixApi.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -41,6 +41,10 @@ public class ServiceOrderService {
 
     @Autowired
     private PaymentService paymentService;
+
+    @Autowired
+    private ServiceOrderTaskRepository serviceOrderTaskRepository;
+
 
     @Transactional
     public void saveServiceOrder(Long serviceRequestId, User user) {
@@ -69,6 +73,12 @@ public class ServiceOrderService {
 
         var oldStatus = serviceOrder.get().getStatus();
 
+        if (orderDto.status() != null && ServiceOrderStatus.forValue(orderDto.status()) == null) {
+            throw new InvalidParameterException("O status " + orderDto.status() + " não e valido");
+        }
+
+        validatePermissionsByStatus(orderDto.status(), serviceOrder.get(), user);
+
         if (orderDto.userTechnical() == null && serviceOrder.get().getUserTechnical() == null
                 && StringUtils.hasText(orderDto.status()) && serviceOrder.get().getStatus() == ServiceOrderStatus.PENDING
                 && (ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.PENDING && ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.CANCELED)) {
@@ -89,11 +99,7 @@ public class ServiceOrderService {
 
         if (orderDto.userTechnical() != null && serviceOrder.get().getUserTechnical() != null && user.getRole() != RoleUser.MANAGER
                 && !orderDto.userTechnical().equals(serviceOrder.get().getUserTechnical().getId())) {
-            throw new AccessForbiddenException("Soemente o usuario do tipo Gerente pode atualizar ID do tecnico depois que já foi atribuido a Ordem de Serviço");
-        }
-
-        if (orderDto.status() != null && ServiceOrderStatus.forValue(orderDto.status()) == null) {
-            throw new InvalidParameterException("O status " + orderDto.status() + " não e valido");
+            throw new AccessForbiddenException("Somente o usuario do tipo Gerente pode atualizar ID do tecnico depois que já foi atribuido a Ordem de Serviço");
         }
 
         if (user.getRole() == RoleUser.TECHNICAL) {
@@ -106,7 +112,7 @@ public class ServiceOrderService {
         }
 
         if (user.getRole() == RoleUser.ATTENDANT) {
-            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.DELIVERED || ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.CANCELED)) {
+            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.DELIVERED && ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.CANCELED)) {
                 throw new AccessForbiddenException("Usuario do tipo Atendente só pode atualizar Status para Entregue ou Cancelado");
             }
 
@@ -120,6 +126,10 @@ public class ServiceOrderService {
                 throw new AccessForbiddenException("Atendente só pode atualizar para Entregue a Ordem de Serviço se status for Completado");
             }
         }
+
+        validateExistsTaskForCompleted(orderDto.status(), serviceOrder.get().getId());
+
+        validatePaymentForDelivery(orderDto.status(), serviceOrder.get().getId());
 
         serviceOrder.get().updateServiceOrder(orderDto);
         repository.save(serviceOrder.get());
@@ -320,4 +330,43 @@ public class ServiceOrderService {
             }
         }
     }
+
+    private void validatePaymentForDelivery(String newStatus, Long serviceOrderId) {
+        var payment = paymentService.findByIdServiceOrderWithoutException(serviceOrderId);
+
+        if (StringUtils.hasText(newStatus) && ServiceOrderStatus.forValue(newStatus) == ServiceOrderStatus.DELIVERED) {
+            if (payment.isEmpty()) {
+                throw new UnprocessableEntityException("Não é possível finalizar a entrega. Nenhum registro de pagamento foi localizado para esta Ordem de Serviço. Por favor, conclua a OS para gerar a cobrança primeiro.");
+            }
+
+            if (payment.get().getPaymentStatus() != PaymentStatus.PAID && payment.get().getPaymentStatus() != PaymentStatus.CANCELED) {
+                throw new UnprocessableEntityException("Não é possível entregar o aparelho. O faturamento desta Ordem de Serviço ainda consta como " + payment.get().getPaymentStatus().portugueseOption + ". É necessário realizar a baixa do pagamento primeiro.");
+            }
+
+            if (payment.get().getPaymentStatus() == PaymentStatus.CANCELED) {
+                throw new UnprocessableEntityException("Atenção: O pagamento vinculado a esta Ordem de Serviço foi cancelado. Não é possível entregar um aparelho com faturamento cancelado.");
+            }
+        }
+    }
+
+    private void validateExistsTaskForCompleted(String newStatus, Long serviceOrderId) {
+        if (StringUtils.hasText(newStatus) && ServiceOrderStatus.forValue(newStatus) == ServiceOrderStatus.COMPLETED) {
+            if (!serviceOrderTaskRepository.existsByServiceOrderId(serviceOrderId)) {
+                throw new UnprocessableEntityException("Não foi possível CONCLUIR a Ordem de Serviço. É necessário que tenha pelo menos 1 Catálogo de Serviço (Tipo de Serviço Feito) atribuído à OS");
+            }
+        }
+    }
+
+    private void validatePermissionsByStatus(String newStatus, ServiceOrder serviceOrder, User loggedUser) {
+        if (serviceOrder.getStatus() == ServiceOrderStatus.DELIVERED && StringUtils.hasText(newStatus)) {
+            throw new UnprocessableEntityException("Esta Ordem de Serviço já foi Entregue ao cliente e o seu ciclo foi encerrado. Nenhuma alteração é permitida.");
+        }
+
+        if (serviceOrder.getStatus() == ServiceOrderStatus.CANCELED && StringUtils.hasText(newStatus)) {
+            if (loggedUser.getRole() != RoleUser.MANAGER) {
+                throw new AccessForbiddenException("Apenas usuários com perfil de Gerente podem alterar uma Ordem de Serviço que encontra-se Cancelada");
+            }
+        }
+    }
+
 }

@@ -9,4 +9,5 @@ public interface ServiceOrderTaskRepository extends JpaRepository<ServiceOrderTa
 
     List<ServiceOrderTask> findAllByServiceOrderId(Long serviceOrderId);
 
+    boolean existsByServiceOrderId(Long serviceOrderId);
 }

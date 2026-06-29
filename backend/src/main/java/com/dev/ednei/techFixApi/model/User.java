@@ -39,7 +39,7 @@ public class User implements UserDetails {
     private LocalDateTime lastLogin;
 
     @Column(name = "created_at")
-    private  LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
@@ -49,6 +49,9 @@ public class User implements UserDetails {
 
     @OneToOne(mappedBy = "user")
     private Employee employee;
+
+    @Column(name = "force_password_changer")
+    private boolean forcePasswordChanger;
 
     @OneToMany(mappedBy = "userTechnical")
     private List<ServiceOrder> serviceOrder;
@@ -69,6 +72,7 @@ public class User implements UserDetails {
         this.status = true;
         this.createdAt = LocalDateTime.now();
         this.role = RoleUser.forValue(userCreateDTO.role());
+        this.forcePasswordChanger = false;
     }
 
     public User(Long idUser) {
@@ -77,7 +81,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList( new SimpleGrantedAuthority("ROLE_" + this.role));
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role));
     }
 
     @Override
@@ -113,6 +117,10 @@ public class User implements UserDetails {
 
     public void updatePassword(String newPassword) {
         this.password = newPassword;
+
+        if (!this.forcePasswordChanger) {
+            this.forcePasswordChanger = true;
+        }
     }
 
     public void registerLastLogin() {

@@ -35,7 +35,7 @@ public class SpringSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v2/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/v2/employees/me").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
+                        .requestMatchers(HttpMethod.PUT, "/api/v2/employees/me", "/api/v2/users/me/password").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.GET, "/api/v2/employees/me", "/api/v2/parts/**", "/api/v2/parts").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.PATCH, "/api/v2/parts/*").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.POST, "/api/v2/employees/search/cpf", "/api/v2/clients", "/api/v2/clients/cpf/search").hasAnyRole("MANAGER", "ATTENDANT")
@@ -44,7 +44,7 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v2/employees/*").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/v2/employees/*", "/api/v2/parts/*").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/v2/parts/*").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/v2/parts").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/v2/parts","/api/v2/users").hasRole("MANAGER")
                         .requestMatchers("/api/v2/employees").hasRole("MANAGER")
                         .anyRequest().permitAll()
                 )

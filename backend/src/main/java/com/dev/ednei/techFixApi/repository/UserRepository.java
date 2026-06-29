@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             SELECT u 
             FROM User u
             JOIN u.employee e
-            WHERE e.email = :emailEmployee    
+            WHERE e.email ILIKE %:emailEmployee%    
             """)
     Optional<User> findByEmailOfEmployee(@Param("emailEmployee") String emailEmployee);
 }

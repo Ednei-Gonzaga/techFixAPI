@@ -103,4 +103,11 @@ public class RestExceptionHandler {
         problemDetail.setInstance(URI.create("/texhFix-apiRest"));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
+
+    @ExceptionHandler(FirstAccessException.class)
+    public ResponseEntity handlerFirstAccessException(FirstAccessException ex){
+        var message = "É necessário atualizar a senha no primeiro acesso. Use o token enviado com validade de 10 minutos e acesse a rota '/api/v2/users/me/password' para atualizar.";
+        var firstAccessDTO = new FirstAccessResponseDTO(message, ex.getToken());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(firstAccessDTO);
+    }
 }

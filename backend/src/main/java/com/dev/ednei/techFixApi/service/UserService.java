@@ -1,12 +1,7 @@
 package com.dev.ednei.techFixApi.service;
 
-import com.dev.ednei.techFixApi.DTOS.user.RequestResetPasswordUser;
-import com.dev.ednei.techFixApi.DTOS.user.UserCreateDTO;
-import com.dev.ednei.techFixApi.DTOS.user.UserResumeDTO;
-import com.dev.ednei.techFixApi.infra.exceptions.errors.AccessForbiddenException;
-import com.dev.ednei.techFixApi.infra.exceptions.errors.ConflictDataException;
-import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
-import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
+import com.dev.ednei.techFixApi.DTOS.user.*;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.*;
 import com.dev.ednei.techFixApi.model.Employee;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.model.enums.StatusVerificationCode;
@@ -65,34 +60,10 @@ public class UserService {
         return new UserResumeDTO(employee);
     }
 
+    //meethods usados em classes dentro aplicação
     public void registerLastLogin(User user) {
         user.registerLastLogin();
         repository.save(user);
-    }
-
-    public void updatePassword(RequestResetPasswordUser requestResetPasswordUser, User userLogged) {
-        var anyMethodChosen = false;
-
-        if (StringUtils.hasText(requestResetPasswordUser.codeVerification()) && StringUtils.hasText(requestResetPasswordUser.email()) && !StringUtils.hasText(requestResetPasswordUser.currentPassword())) {
-            updateNotLoggedInUserPassword(requestResetPasswordUser);
-            anyMethodChosen = true;
-
-            var user = repository.findByEmailOfEmployee(requestResetPasswordUser.email());
-
-            user.get().registerUpdatedAt();
-
-            repository.save(user.get());
-        }
-
-        if (!StringUtils.hasText(requestResetPasswordUser.codeVerification()) && !StringUtils.hasText(requestResetPasswordUser.email()) && StringUtils.hasText(requestResetPasswordUser.currentPassword())) {
-            updateLoggedInUserPassword(requestResetPasswordUser, userLogged);
-            anyMethodChosen = true;
-            userLogged.registerUpdatedAt();
-        }
-
-        if (!anyMethodChosen) {
-            throw new InvalidParameterException("É necessário preencher somente os campos do metodo atualização de SENHA escolhido");
-        }
     }
 
     @Transactional
@@ -109,7 +80,7 @@ public class UserService {
 
     //Methods private
     @Transactional
-    private void updateNotLoggedInUserPassword(RequestResetPasswordUser requestResetPasswordUser) {
+    public void updateNotLoggedInUserPassword(RequestResetPasswordNotLogged requestResetPasswordUser) {
         var user = repository.findByEmailOfEmployee(requestResetPasswordUser.email());
 
         if (user.isEmpty()) {
@@ -136,13 +107,14 @@ public class UserService {
         user.get().updatePassword(bCryptPasswordEncoder.encode(requestResetPasswordUser.newPassword()));
         verificationCodes.updateStatusUsed();
 
+        user.get().registerUpdatedAt();
         repository.save(user.get());
 
         sendMessageSuccessUpdatePassword(requestResetPasswordUser.email());
     }
 
     @Transactional
-    private void updateLoggedInUserPassword(RequestResetPasswordUser requestResetPasswordUser, User user) {
+    public void updateLoggedInUserPassword(RequestResetPasswordUserLogged requestResetPasswordUser, User user) {
 
         System.out.println(user.getId());
         if (!bCryptPasswordEncoder.matches(requestResetPasswordUser.currentPassword(), user.getPassword())) {
@@ -150,6 +122,7 @@ public class UserService {
         }
 
         user.updatePassword(bCryptPasswordEncoder.encode(requestResetPasswordUser.newPassword()));
+        user.registerUpdatedAt();
         repository.save(user);
 
         var employeeUser = employeeRepository.findByUserId(user.getId());

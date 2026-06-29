@@ -24,7 +24,7 @@ public class Employee extends PeopleData {
 
     public Employee(UserCreateDTO userCreateDTO, User user) {
         super(userCreateDTO.name(), userCreateDTO.cpf(), userCreateDTO.phone(), userCreateDTO.whatsapp());
-        this.email = userCreateDTO.email();
+        this.email = userCreateDTO.email().toLowerCase();
         this.user = user;
     }
 

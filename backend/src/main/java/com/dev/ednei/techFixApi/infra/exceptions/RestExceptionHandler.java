@@ -8,6 +8,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -109,5 +110,14 @@ public class RestExceptionHandler {
         var message = "É necessário atualizar a senha no primeiro acesso. Use o token enviado com validade de 10 minutos e acesse a rota '/api/v2/users/me/password' para atualizar.";
         var firstAccessDTO = new FirstAccessResponseDTO(message, ex.getToken());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(firstAccessDTO);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity handlerDisabledException(DisabledException ex){
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Sua conta foi desativada. Entre em contato com o gerente do sistema");
+        problemDetail.setTitle("Disabled Account");
+        problemDetail.setInstance(URI.create("/api/v2/auth/login"));
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problemDetail);
     }
 }

@@ -32,8 +32,10 @@ public class EmployeeController {
     }
 
     @GetMapping("/employees")
-    public ResponseEntity getAllEmployees(Pageable pageable) {
-        var employees = employeeService.findAllUser(pageable);
+    public ResponseEntity getAllEmployees(@RequestParam(required = false, name = "status")  Boolean status ,
+                                          @RequestParam(required = false, name = "name") String name,
+                                          Pageable pageable) {
+        var employees = employeeService.logicFindAllUser(status,name, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(employees);
     }
 

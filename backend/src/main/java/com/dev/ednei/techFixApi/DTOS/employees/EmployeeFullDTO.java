@@ -9,10 +9,11 @@ public record EmployeeFullDTO(
         String phone,
         String whatsapp,
         String email,
+        Boolean status,
         Long user
 
 ) {
     public EmployeeFullDTO(Employee employee) {
-        this(employee.getId(), employee.getName(), employee.getCpf(), employee.getPhone(), employee.getWhatsapp(), employee.getEmail(), employee.getUser().getId());
+        this(employee.getId(), employee.getName(), employee.getCpf(), employee.getPhone(), employee.getWhatsapp(), employee.getEmail(),employee.getUser().isStatus() , employee.getUser().getId());
     }
 }

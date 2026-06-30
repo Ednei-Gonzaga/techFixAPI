@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.infra.exceptions;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 
@@ -119,5 +121,15 @@ public class RestExceptionHandler {
         problemDetail.setInstance(URI.create("/api/v2/auth/login"));
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problemDetail);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity handlerMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex, HttpServletRequest request){
+        var message = "O valor informado '"+ ex.getValue() +"' para o parâmetro '" + ex.getName() + "' é inválido";
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, message);
+        problemDetail.setTitle("Invalid Parameter Type");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
 }

@@ -45,21 +45,24 @@ public class PartController {
     }
 
     @GetMapping("/parts")
-    public ResponseEntity<Page<PartFullDTO>> findAllPartsOrNameOrCode(@RequestParam(required = false, name = "nameOrCode") String nameOrCode, Pageable pageable){
-        Page<PartFullDTO> parts = null;
+    public ResponseEntity<Page<PartFullDTO>> findAllPartsOrNameOrCode(
+            @RequestParam(required = false, name = "nameOrCode") String nameOrCode,
+            @RequestParam(required = false, name = "status") Boolean status,
+            Pageable pageable){
 
-        if(StringUtils.hasText(nameOrCode)){
-            parts = partService.findAllByNameOrCodeSku(nameOrCode, pageable);
-        }else{
-            parts = partService.findAllParts(pageable);
-        }
-
+        Page<PartFullDTO> parts = partService.logicFindAll(status, nameOrCode, pageable);
         return ResponseEntity.ok(parts);
     }
 
-    @PatchMapping("/parts/{id}")
+    @PatchMapping("/parts/{id}/quantity")
     public ResponseEntity<PartFullDTO> recordQuantityUsed(@PathVariable Long id, @RequestBody @Valid RequestRecordQuantityStock quantityStockUsed){
         var part = partService.updateStockQuantity(id, quantityStockUsed.quantityUsed());
+        return ResponseEntity.ok(part);
+    }
+
+    @PatchMapping("/parts/{id}")
+    public ResponseEntity<PartFullDTO> enablePart(@PathVariable Long id){
+        var part = partService.enablePart(id);
         return ResponseEntity.ok(part);
     }
 }

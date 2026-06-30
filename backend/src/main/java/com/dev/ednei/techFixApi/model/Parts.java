@@ -52,6 +52,10 @@ public class Parts extends CatalogItem {
         this.setStatus(false);
     }
 
+    public void enablePart() {
+        this.setStatus(true);
+    }
+
     public void recordQuantityUsed(Integer quantityUsed) {
         this.stockQuantity -= quantityUsed;
     }

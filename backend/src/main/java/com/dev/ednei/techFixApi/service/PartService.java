@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -20,6 +22,7 @@ public class PartService {
     @Autowired
     private PartsRepository repository;
 
+    // Metodos para Controller
     @Transactional
     public PartFullDTO saveParte(PartCreateDTO partDto) {
         var existsCode = true;
@@ -67,6 +70,20 @@ public class PartService {
         repository.save(parts.get());
     }
 
+    @Transactional
+    public PartFullDTO enablePart(Long id) {
+        var parts = repository.findById(id);
+
+        if (parts.isEmpty()) {
+            throw new EntityNotFoundException("Não foi encontrado Peça com o id: " + id);
+        }
+
+        parts.get().enablePart();
+
+        repository.save(parts.get());
+        return new PartFullDTO(parts.get());
+    }
+
     public PartFullDTO findPartById(Long id) {
         var parts = repository.findById(id);
 
@@ -83,19 +100,24 @@ public class PartService {
         return parts.map(PartFullDTO::new);
     }
 
-    public  Page<PartFullDTO> findAllByNameOrCodeSku(String part, Pageable pageable) {
-        var parts = repository.findAllByNameOrCodeSku( part, pageable);
-        return parts.map(PartFullDTO::new);
+    public Page<PartFullDTO> logicFindAll(Boolean status, String part, Pageable pageable) {
+
+        if(StringUtils.hasText(part)){
+            return findAllByNameOrCodeSkuOrStatus(status, part, pageable);
+        }else{
+           return  findAllOrAllByStatus(status, pageable);
+        }
+
     }
 
-    public PartFullDTO updateStockQuantity(Long id, Integer quantityUsed){
+    public PartFullDTO updateStockQuantity(Long id, Integer quantityUsed) {
         var part = repository.findById(id);
 
         if (part.isEmpty()) {
             throw new EntityNotFoundException("Não foi encontrado Peça com o id: " + id);
         }
 
-        if(part.get().getStockQuantity() < quantityUsed){
+        if (part.get().getStockQuantity() < quantityUsed) {
             throw new UnprocessableEntityException("A quantidade usada e maior que a disponivel no estoque");
         }
 
@@ -105,6 +127,8 @@ public class PartService {
         return new PartFullDTO(part.get());
     }
 
+
+    //Metodos privados
 
     private String generateCodeSku() {
         var random = new Random();
@@ -116,5 +140,34 @@ public class PartService {
         return codeSku;
     }
 
+    private Page<PartFullDTO> findAllByNameOrCodeSkuOrStatus(Boolean status, String part, Pageable pageable) {
+        List<Boolean> statusList;
+        Page<Parts> parts;
 
+        if (status != null) {
+            statusList = List.of(status);
+            parts = repository.findAllByNameOrCodeSkuOrStatus(statusList, part, pageable);
+        } else {
+            statusList = List.of(Boolean.FALSE, Boolean.TRUE);
+            parts = repository.findAllByNameOrCodeSkuOrStatus(statusList, part, pageable);
+        }
+
+
+        return parts.map(PartFullDTO::new);
+    }
+
+    public Page<PartFullDTO> findAllOrAllByStatus(Boolean status, Pageable pageable) {
+        List<Boolean> statusList;
+        Page<Parts> parts;
+
+        if(status != null) {
+            statusList = List.of(status);
+            parts = repository.findAllOrAllByStatus(statusList, pageable);
+        }else {
+            statusList = List.of(Boolean.FALSE, Boolean.TRUE);
+            parts = repository.findAllOrAllByStatus(statusList, pageable);
+        }
+
+        return parts.map(PartFullDTO::new);
+    }
 }

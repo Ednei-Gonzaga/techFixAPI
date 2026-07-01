@@ -60,7 +60,7 @@ public class PartController {
         return ResponseEntity.ok(part);
     }
 
-    @PatchMapping("/parts/{id}")
+    @PatchMapping("/parts/{id}/enable")
     public ResponseEntity<PartFullDTO> enablePart(@PathVariable Long id){
         var part = partService.enablePart(id);
         return ResponseEntity.ok(part);

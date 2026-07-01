@@ -10,11 +10,17 @@ import org.springframework.data.repository.query.Param;
 
 public interface ServiceCatalogRepository extends JpaRepository<ServiceCatalog, Long> {
 
+    Page<ServiceCatalog>  findAllByStatus(Boolean status, Pageable pageable);
+
     @Query("""
       SELECT s 
       FROM ServiceCatalog s
       WHERE s.name ILIKE %:name%
+      AND s.status = :status
           """)
-    Page<ServiceCatalog> findAllByName(@Param("name") String name, Pageable pageable);
+    Page<ServiceCatalog> findAllByName(
+            @Param("status") Boolean status,
+            @Param("name") String name,
+            Pageable pageable);
 
 }

@@ -94,12 +94,6 @@ public class PartService {
         return new PartFullDTO(parts.get());
     }
 
-    public Page<PartFullDTO> findAllParts(Pageable pageable) {
-        var parts = repository.findAll(pageable);
-
-        return parts.map(PartFullDTO::new);
-    }
-
     public Page<PartFullDTO> logicFindAll(Boolean status, String part, Pageable pageable) {
 
         if(StringUtils.hasText(part)){

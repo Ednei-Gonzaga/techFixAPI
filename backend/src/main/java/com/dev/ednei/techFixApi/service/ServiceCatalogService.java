@@ -42,7 +42,7 @@ public class ServiceCatalogService {
             throw new EntityNotFoundException("Não foi possivel encontrar Catalogo de Serviço com ID " + id);
         }
 
-        if (catalogDto != null && catalogDto.costPrice() < 0) {
+        if (catalogDto != null && catalogDto.costPrice() != null && catalogDto.costPrice() < 0) {
             throw new UnprocessableEntityException("O valor não pode ser menor que zero");
         }
 
@@ -85,9 +85,9 @@ public class ServiceCatalogService {
         Page<ServiceCatalog> serviceCatalogs;
 
         if(StringUtils.hasText(name)){
-            serviceCatalogs = repository.findAllByName(name, pageable);
+            serviceCatalogs = repository.findAllByName(true ,name, pageable);
         }else{
-           serviceCatalogs = repository.findAll(pageable);
+           serviceCatalogs = repository.findAllByStatus(true ,pageable);
         }
 
         return serviceCatalogs.map(ServiceCatalogFullDTO::new);

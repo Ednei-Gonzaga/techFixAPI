@@ -14,12 +14,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ServiceCatalogService {
     @Autowired
     private ServiceCatalogRepository repository;
+
+    //Metodos usados em COntroller
 
     @Transactional
     public ServiceCatalogFullDTO saveServiceCatalog(ServiceCatalogCreatedDTO catalogDto) {
@@ -81,15 +85,47 @@ public class ServiceCatalogService {
     }
 
 
-    public Page<ServiceCatalogFullDTO> getAllOrAllByNameServiceCatalogs(String name, Pageable pageable){
+    public Page<ServiceCatalogFullDTO> getAllOrAllByNameServiceCatalogs(String name, Pageable pageable) {
         Page<ServiceCatalog> serviceCatalogs;
 
-        if(StringUtils.hasText(name)){
-            serviceCatalogs = repository.findAllByName(true ,name, pageable);
-        }else{
-           serviceCatalogs = repository.findAllByStatus(true ,pageable);
+        if (StringUtils.hasText(name)) {
+            serviceCatalogs = repository.findAllByName(List.of(Boolean.TRUE), name, pageable);
+        } else {
+            serviceCatalogs = repository.findAllByStatus(List.of(Boolean.TRUE), pageable);
+        }
+
+
+        return serviceCatalogs.map(ServiceCatalogFullDTO::new);
+    }
+
+    public Page<ServiceCatalogFullDTO> getAllOrAllByNameOrStatus(Boolean status, String name, Pageable pageable) {
+        Page<ServiceCatalog> serviceCatalogs;
+        List<Boolean> statusList;
+
+        if (StringUtils.hasText(name) && status == null) {
+
+            statusList = List.of(Boolean.TRUE, Boolean.FALSE);
+            serviceCatalogs = repository.findAllByName(statusList, name, pageable);
+
+        } else if (StringUtils.hasText(name) && status != null) {
+
+            statusList = List.of(status);
+            serviceCatalogs = repository.findAllByName(statusList, name, pageable);
+
+        } else if (!StringUtils.hasText(name) && status != null) {
+
+            statusList = List.of(status);
+            serviceCatalogs = repository.findAllByStatus(statusList, pageable);
+
+        } else {
+            statusList = List.of(Boolean.TRUE, Boolean.FALSE);
+            serviceCatalogs = repository.findAllByStatus(statusList, pageable);
         }
 
         return serviceCatalogs.map(ServiceCatalogFullDTO::new);
     }
+
+    //Metodos Usados em outras classes
+
+    //Metodos privados
 }

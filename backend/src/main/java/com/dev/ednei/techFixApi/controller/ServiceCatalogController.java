@@ -48,4 +48,13 @@ public class ServiceCatalogController {
         return ResponseEntity.ok().body(serviceCatalogs);
     }
 
+    @GetMapping("/admin/service-catalogs")
+    public ResponseEntity<Page<ServiceCatalogFullDTO>> getAllServiceCatalogs(
+            @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "status") Boolean status,
+            Pageable pageable) {
+
+        var serviceCatalogs = serviceCatalogService.getAllOrAllByNameOrStatus(status, name, pageable);
+        return ResponseEntity.ok().body(serviceCatalogs);
+    }
 }

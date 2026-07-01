@@ -23,7 +23,7 @@ public class SpringSecurityConfig {
     private SecurityFilter securityFilter;
 
     @Autowired
-    private CustomAuthenticationEntryPoint  customAuthenticationEntryPoint;
+    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Autowired
     private CustumAccessDeniedHandler custumAccessDeniedHandler;
@@ -36,16 +36,16 @@ public class SpringSecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v2/auth/login").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/v2/employees/me", "/api/v2/users/me/password").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
-                        .requestMatchers(HttpMethod.GET, "/api/v2/employees/me", "/api/v2/parts/**", "/api/v2/parts", "/api/v2/service-catalogs").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
+                        .requestMatchers(HttpMethod.GET, "/api/v2/employees/me", "/api/v2/parts/**", "/api/v2/parts", "/api/v2/service-catalogs", "/api/v2/service-requests/*").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.PATCH, "/api/v2/parts/*/quantity").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
-                        .requestMatchers(HttpMethod.POST, "/api/v2/employees/search/cpf", "/api/v2/clients", "/api/v2/clients/cpf/search").hasAnyRole("MANAGER", "ATTENDANT")
-                        .requestMatchers(HttpMethod.GET, "/api/v2/clients/*", "/api/v2/clients").hasAnyRole("MANAGER", "ATTENDANT")
-                        .requestMatchers(HttpMethod.PUT, "/api/v2/clients/*").hasAnyRole("MANAGER", "ATTENDANT")
-                        .requestMatchers(HttpMethod.GET, "/api/v2/employees/*","/api/v2/employees").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/v2/employees/search/cpf", "/api/v2/clients", "/api/v2/clients/cpf/search", "/api/v2/service-requests").hasAnyRole("MANAGER", "ATTENDANT")
+                        .requestMatchers(HttpMethod.GET, "/api/v2/clients/*", "/api/v2/clients", "/api/v2/service-requests", "/api/v2/service-requests/clients/*").hasAnyRole("MANAGER", "ATTENDANT")
+                        .requestMatchers(HttpMethod.PUT, "/api/v2/clients/*", "/api/v2/service-requests/*").hasAnyRole("MANAGER", "ATTENDANT")
+                        .requestMatchers(HttpMethod.GET, "/api/v2/employees/*", "/api/v2/employees", "/api/v2/admin/service-catalogs").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/v2/employees/*", "/api/v2/parts/*", "/api/v2/service-catalogs/**").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.PATCH,  "/api/v2/parts/*/enable", "/api/v2/service-catalogs/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v2/parts/*/enable", "/api/v2/service-catalogs/**").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/v2/parts/*", "/api/v2/users/*", "/api/v2/service-catalogs/**").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/v2/parts","/api/v2/users", "/api/v2/service-catalogs", "/api/v2/service-catalogs/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/v2/parts", "/api/v2/users", "/api/v2/service-catalogs", "/api/v2/service-catalogs/**").hasRole("MANAGER")
                         .requestMatchers("/api/v2/employees").hasRole("MANAGER")
                         .anyRequest().permitAll()
                 )

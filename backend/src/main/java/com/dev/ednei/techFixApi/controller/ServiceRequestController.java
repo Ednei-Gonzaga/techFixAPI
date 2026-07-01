@@ -27,21 +27,28 @@ public class ServiceRequestController {
         return new ResponseEntity<>(serviceRequest, HttpStatus.OK);
     }
 
-    @PutMapping("/service-request/{id}")
-    public ResponseEntity<ServiceRequestFullDTO> updateRequest(@PathVariable Long id, @RequestBody  ServiceRequestUpdateDTO requestDto){
+    @PutMapping("/service-requests/{id}")
+    public ResponseEntity<ServiceRequestFullDTO> updateRequest(@PathVariable Long id, @RequestBody ServiceRequestUpdateDTO requestDto) {
         var serviceRequest = serviceRequestService.updateRequest(id, requestDto);
         return new ResponseEntity<>(serviceRequest, HttpStatus.OK);
     }
 
-    @GetMapping("/service-request/{id}")
-    public ResponseEntity<ServiceRequestFullDTO> getByIdRequest(@PathVariable Long id){
+    @GetMapping("/service-requests/{id}")
+    public ResponseEntity<ServiceRequestFullDTO> getByIdRequest(@PathVariable Long id) {
         var request = serviceRequestService.findByIdRequest(id);
-        return new ResponseEntity<>(request,HttpStatus.OK);
+        return new ResponseEntity<>(request, HttpStatus.OK);
     }
 
-    @GetMapping("/service-request")
-    public ResponseEntity<Page<ServiceRequestFullDTO>> getAllRequest(Pageable pageable){
+    @GetMapping("/service-requests")
+    public ResponseEntity<Page<ServiceRequestFullDTO>> getAllRequest(Pageable pageable) {
         var request = serviceRequestService.findAllRequests(pageable);
         return new ResponseEntity<>(request, HttpStatus.OK);
     }
+
+    @GetMapping("/service-requests/clients/{id}")
+    public ResponseEntity<Page<ServiceRequestFullDTO>> getAllByClientRequest(@PathVariable Long id, Pageable pageable) {
+         var serviceRequest = serviceRequestService.findAllByClient(id, pageable);
+         return new ResponseEntity<>(serviceRequest, HttpStatus.OK);
+    }
+
 }

@@ -29,6 +29,8 @@ public class ServiceRequestService {
     @Autowired
     private ServiceOrderService serviceOrderService;
 
+    //Metodos para usados em Controller
+
     @Transactional
     public ServiceRequestFullDTO saveRequest(ServiceRequestCreateDTO requestDto, User user) {
         if (!clientRepository.existsById(requestDto.client())) {
@@ -88,7 +90,18 @@ public class ServiceRequestService {
 
     }
 
+    public Page<ServiceRequestFullDTO> findAllByClient(Long id, Pageable pageable){
+        if(!clientRepository.existsById(id)){
+            throw new EntityNotFoundException("Cliente com ID  " + id + " não encontrado");
+        }
+        var serviceRequest = repository.findAllByClientId(id, pageable);
+        return serviceRequest.map(ServiceRequestFullDTO::new);
+    }
 
+
+    //Metodos usados em outras classes
+
+    //Metodos privados
     private boolean checkCategoryDeviceIsCorrect(String categoryCode) {
         var isCorrect = false;
         for (CategoryDevice category : CategoryDevice.values()) {

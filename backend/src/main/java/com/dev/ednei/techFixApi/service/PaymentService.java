@@ -42,55 +42,64 @@ public class PaymentService {
 
     @Transactional
     public PaymentsFullDTO updatePayment(Long id, @NonNull PaymentsUpdateDTO paymentDto, User user) {
-        var payment = checkExistsPaymentById(id);
+        var payment = repository.findByServiceOrderId(id);
 
-        var status= payment.getPaymentStatus();
+        if (payment.isEmpty()) {
+            throw new EntityNotFoundException("Não existe Dados de Pagamento para serviço com ID " + id);
+        }
+
+        var status= payment.get().getPaymentStatus();
 
         if (StringUtils.hasText(paymentDto.paymentMethod()) && PaymentMethod.forValue(paymentDto.paymentMethod()) == null) {
             throw new InvalidParameterException("Metodo de Pagamento " + paymentDto.paymentMethod() + " nao existe");
         }
 
-        if (payment.getPaymentStatus() == PaymentStatus.PAID) {
+        if ( payment.get().getPaymentStatus() == PaymentStatus.PAID) {
             throw new UnprocessableEntityException("Não e possivel alterar pagamento com Status PAGO");
         }
 
-        if (payment.getPaymentStatus() == PaymentStatus.CANCELED) {
+        if ( payment.get().getPaymentStatus() == PaymentStatus.CANCELED) {
             throw new UnprocessableEntityException("Não e possivel alterar pagamento com Status CANCELADO");
         }
 
-        payment.updateMethodAndDiscount(paymentDto);
-        repository.save(payment);
+        payment.get().updateMethodAndDiscount(paymentDto);
+        repository.save( payment.get());
 
         String notes = "Dados Pagamento ajustados manualmente (Método de Pagamento e/ou Desconto).";
-        paymentsHistoryService.saveHistoryPayment(payment, user, status, status, notes);
+        paymentsHistoryService.saveHistoryPayment( payment.get(), user, status, status, notes);
 
-        return new PaymentsFullDTO(payment);
+        return new PaymentsFullDTO( payment.get());
     }
 
     @Transactional
-    public PaymentsFullDTO updatePaymentStatus(Long id, PaymentsRequestStatus requestStatus, User user) {
-        var payment = checkExistsPaymentById(id);
-        var oldStatus = payment.getPaymentStatus();
+    public PaymentsFullDTO updatePaymentStatus(Long id, PaymentsRequestStatus requestStatus, User user)   {
+        var payment = repository.findByServiceOrderId(id);
+
+        if (payment.isEmpty()) {
+            throw new EntityNotFoundException("Não existe Dados de Pagamento para serviço com ID " + id);
+        }
+
+        var oldStatus = payment.get().getPaymentStatus();
 
         if (PaymentStatus.forValue(requestStatus.paymentStatus()) == null) {
             throw new InvalidParameterException("Status de Pagamento " + requestStatus.paymentStatus() + " nao existe");
         }
 
-        if (payment.getPaymentStatus() == PaymentStatus.PAID || payment.getPaymentStatus() == PaymentStatus.CANCELED) {
+        if (payment.get().getPaymentStatus() == PaymentStatus.PAID || payment.get().getPaymentStatus() == PaymentStatus.CANCELED) {
             throw new UnprocessableEntityException("Este pagamento já foi encerrado (Pago ou Cancelado) e não pode sofrer novas alterações.");
         }
 
-        if (payment.getPaymentMethod() == null && PaymentStatus.forValue(requestStatus.paymentStatus()) == PaymentStatus.PAID) {
+        if (payment.get().getPaymentMethod() == null && PaymentStatus.forValue(requestStatus.paymentStatus()) == PaymentStatus.PAID) {
             throw new UnprocessableEntityException("Para atualizar status para PAGO e necessario preencher primeiro qual foi o Metodo de Pagamento");
         }
 
-        payment.updateStatus(PaymentStatus.forValue(requestStatus.paymentStatus()));
-        repository.save(payment);
+        payment.get().updateStatus(PaymentStatus.forValue(requestStatus.paymentStatus()));
+        repository.save(payment.get());
 
-        String notes = "Status Pagamento ajustado manualmente para " + payment.getPaymentStatus().portugueseOption;
-        paymentsHistoryService.saveHistoryPayment(payment, user, oldStatus, payment.getPaymentStatus(), notes);
+        String notes = "Status Pagamento ajustado manualmente para " + payment.get().getPaymentStatus().portugueseOption;
+        paymentsHistoryService.saveHistoryPayment(payment.get(), user, oldStatus, payment.get().getPaymentStatus(), notes);
 
-        return new PaymentsFullDTO(payment);
+        return new PaymentsFullDTO(payment.get());
     }
 
     public PaymentsFullDTO findByIdServiceOrder(Long serviceOrderId) {

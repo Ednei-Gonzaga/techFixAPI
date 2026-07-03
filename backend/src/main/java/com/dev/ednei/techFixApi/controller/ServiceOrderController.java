@@ -54,5 +54,4 @@ public class ServiceOrderController {
 
         return ResponseEntity.ok().body(serviceOrders);
     }
-
 }

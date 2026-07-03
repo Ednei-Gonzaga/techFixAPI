@@ -23,7 +23,7 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     @Query("""
                 SELECT so.id, cl.name, cl.cpf, cl.phone, cl.whatsapp, 
                         (SELECT e.name FROM Employee e WHERE e.user = so.userTechnical), sr.device, sr.category, sr.problemDescription, so.identificationCode, so.status,
-                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, sr.id
+                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus,so.userTechnical.id, sr.id
                 FROM ServiceOrder so
                 JOIN so.serviceRequest sr
                 JOIN sr.client cl
@@ -35,7 +35,7 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     @Query("""
                  SELECT so.id, cl.name, cl.cpf, cl.phone, cl.whatsapp, 
                         (SELECT e.name FROM Employee e WHERE e.user = so.userTechnical), sr.device, sr.category, sr.problemDescription, so.identificationCode, so.status,
-                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, sr.id
+                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus,so.userTechnical.id, sr.id
                 FROM ServiceOrder so
                 JOIN so.serviceRequest sr
                 JOIN sr.client cl
@@ -59,7 +59,7 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     @Query("""
                  SELECT so.id, cl.name, cl.cpf, cl.phone, cl.whatsapp, 
                         (SELECT e.name FROM Employee e WHERE e.user = so.userTechnical), sr.device, sr.category, sr.problemDescription, so.identificationCode, so.status,
-                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, sr.id
+                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, so.userTechnical.id, sr.id
                 FROM ServiceOrder so
                 JOIN so.serviceRequest sr
                 JOIN sr.client cl
@@ -72,7 +72,7 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     @Query("""
                  SELECT so.id, cl.name, cl.cpf, cl.phone, cl.whatsapp, 
                         (SELECT e.name FROM Employee e WHERE e.user = so.userTechnical), sr.device, sr.category, sr.problemDescription, so.identificationCode, so.status,
-                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, sr.id
+                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus,so.userTechnical.id,  sr.id
                 FROM ServiceOrder so
                 JOIN so.serviceRequest sr
                 JOIN sr.client cl
@@ -86,7 +86,7 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     @Query("""
                  SELECT so.id, cl.name, cl.cpf, cl.phone, cl.whatsapp, 
                         (SELECT e.name FROM Employee e WHERE e.user = so.userTechnical), sr.device, sr.category, sr.problemDescription, so.identificationCode, so.status,
-                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, sr.id
+                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus,so.userTechnical.id,  sr.id
                 FROM ServiceOrder so
                 JOIN so.serviceRequest sr
                 JOIN sr.client cl
@@ -101,7 +101,7 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     @Query("""
                  SELECT so.id, cl.name, cl.cpf, cl.phone, cl.whatsapp, 
                         (SELECT e.name FROM Employee e WHERE e.user = so.userTechnical), sr.device, sr.category, sr.problemDescription, so.identificationCode, so.status,
-                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, sr.id
+                        so.dateTimeStart, so.dateTimeCompleted, so.dateTimeUpdateStatus, so.userTechnical.id, sr.id
                 FROM ServiceOrder so
                 JOIN so.serviceRequest sr
                 JOIN sr.client cl

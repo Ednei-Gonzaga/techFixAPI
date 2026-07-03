@@ -20,6 +20,7 @@ public record ServiceOrderDetailDTO(
         LocalDateTime dateTimeStart,
         LocalDateTime dateTimeCompleted,
         LocalDateTime dateTimeUpdateStatus,
+        Long userTechnical,
         Long serviceRequest
 ) {
 }

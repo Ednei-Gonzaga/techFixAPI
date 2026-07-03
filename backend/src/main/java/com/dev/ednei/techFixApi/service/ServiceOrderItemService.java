@@ -38,8 +38,8 @@ public class ServiceOrderItemService {
         var part = checkExistsPartById(itemDto.part());
         var serviceOrder = checkExistsServiceOrderById(itemDto.serviceOrder());
 
-        if(serviceOrder.getStatus() == ServiceOrderStatus.DELIVERED || serviceOrder.getStatus() == ServiceOrderStatus.CANCELED) {
-            throw new UnprocessableEntityException("Não é possivel adicionar peça. Pois a ordem de serviço com ID "+ itemDto.serviceOrder() +" já foi finalizada");
+        if(serviceOrder.getStatus() == ServiceOrderStatus.DELIVERED || serviceOrder.getStatus() == ServiceOrderStatus.CANCELED || serviceOrder.getStatus() == ServiceOrderStatus.COMPLETED) {
+            throw new UnprocessableEntityException("Não é possivel adicionar peça. Pois a ordem de serviço com ID "+ itemDto.serviceOrder() +" já foi finalizada e consta como '" + serviceOrder.getStatus().portugueseOption  +"'.");
         }
 
         if (user.getRole() != RoleUser.MANAGER && !user.getId().equals(serviceOrder.getUserTechnical().getId())) {
@@ -78,6 +78,10 @@ public class ServiceOrderItemService {
         var part = partsRepository.findById(serviceOrderItem.getPart().getId());
         var serviceOrder = checkExistsServiceOrderById(serviceOrderItem.getServiceOrder().getId());
 
+        if(serviceOrder.getStatus() == ServiceOrderStatus.DELIVERED || serviceOrder.getStatus() == ServiceOrderStatus.CANCELED || serviceOrder.getStatus() == ServiceOrderStatus.COMPLETED) {
+            throw new UnprocessableEntityException("Não é possivel atualizar peça. Pois a ordem de serviço com ID "+ id +" já foi finalizada e consta como '" + serviceOrder.getStatus().portugueseOption  +"'.");
+        }
+
         if (user.getRole() != RoleUser.MANAGER && !user.getId().equals(serviceOrder.getUserTechnical().getId())) {
             throw new AccessForbiddenException("A Ordem de Serviço com ID " + serviceOrder.getId() + " não pertence ao Usuario com ID " + user.getId() + " que realizou a requizição");
         }
@@ -109,6 +113,10 @@ public class ServiceOrderItemService {
         var serviceOrderItem = checkExistsServiceOrderItemById(id);
         var part = partsRepository.findById(serviceOrderItem.getPart().getId());
         var serviceOrder = checkExistsServiceOrderById(serviceOrderItem.getServiceOrder().getId());
+
+        if(serviceOrder.getStatus() == ServiceOrderStatus.DELIVERED || serviceOrder.getStatus() == ServiceOrderStatus.CANCELED || serviceOrder.getStatus() == ServiceOrderStatus.COMPLETED) {
+            throw new UnprocessableEntityException("Não é possivel deletar peça. Pois a ordem de serviço com ID "+ id +" já foi finalizada  e consta como '" + serviceOrder.getStatus().portugueseOption  +"'.");
+        }
 
         if (user.getRole() != RoleUser.MANAGER && !user.getId().equals(serviceOrder.getUserTechnical().getId())) {
             throw new AccessForbiddenException("A Ordem de Serviço com ID " + serviceOrder.getId() + " não pertence ao Usuario com ID " + user.getId() + " que realizou a requizição");

@@ -48,8 +48,9 @@ public class SpringSecurityConfig {
                         .requestMatchers("/api/v2/employees").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/v2/service-order-tasks").hasAnyRole("MANAGER", "TECHNICAL")
                         .requestMatchers(HttpMethod.PUT, "/api/v2/employees/me", "/api/v2/users/me/password", "/api/v2/service-orders/*").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
-                        .requestMatchers(HttpMethod.GET, "/api/v2/employees/me", "/api/v2/parts/**", "/api/v2/parts", "/api/v2/service-catalogs", "/api/v2/service-requests/*", "/api/v2/service-orders", "/api/v2/service-orders/*").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
+                        .requestMatchers(HttpMethod.GET, "/api/v2/service-order-items/service-order/*","/api/v2/employees/me", "/api/v2/parts/**", "/api/v2/parts", "/api/v2/service-catalogs", "/api/v2/service-requests/*", "/api/v2/service-orders", "/api/v2/service-orders/*").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.PATCH, "/api/v2/parts/*/quantity").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
+                        .requestMatchers("/api/v2/service-order-items").hasAnyRole("MANAGER", "TECHNICAL")
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex ->

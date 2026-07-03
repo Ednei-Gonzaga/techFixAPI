@@ -12,6 +12,7 @@ import com.dev.ednei.techFixApi.model.ServiceOrder;
 import com.dev.ednei.techFixApi.model.ServiceOrderItem;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
+import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import com.dev.ednei.techFixApi.repository.PartsRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderItemRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
@@ -36,6 +37,10 @@ public class ServiceOrderItemService {
     public ServiceOrderItemFullDTO saveItem(ServiceOrderItemCreatedDTO itemDto, User user) {
         var part = checkExistsPartById(itemDto.part());
         var serviceOrder = checkExistsServiceOrderById(itemDto.serviceOrder());
+
+        if(serviceOrder.getStatus() == ServiceOrderStatus.DELIVERED || serviceOrder.getStatus() == ServiceOrderStatus.CANCELED) {
+            throw new UnprocessableEntityException("Não é possivel adicionar peça. Pois a ordem de serviço com ID "+ itemDto.serviceOrder() +" já foi finalizada");
+        }
 
         if (user.getRole() != RoleUser.MANAGER && !user.getId().equals(serviceOrder.getUserTechnical().getId())) {
             throw new AccessForbiddenException("A Ordem de Serviço com ID " + itemDto.serviceOrder() + " não pertence ao Usuario com ID " + user.getId() + " que realizou a requizição");

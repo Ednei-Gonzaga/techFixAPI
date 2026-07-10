@@ -9,6 +9,7 @@ import com.dev.ednei.techFixApi.model.ServiceOrder;
 import com.dev.ednei.techFixApi.model.ServiceOrderTask;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
+import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import com.dev.ednei.techFixApi.repository.ServiceCatalogRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderTaskRepository;
@@ -35,11 +36,17 @@ public class ServiceOrderTaskService {
         var serviceCatalog = checkExistsServiceCatalog(taskDto.serviceCatalog());
         var serviceOrderTask = new ServiceOrderTask(serviceOrder, serviceCatalog);
 
+        if (!serviceCatalog.isStatus()) {
+            throw new UnprocessableEntityException("Catalogo de Serviço com ID " + serviceCatalog.getId() + " está Desativado.");
+        }
+
+        checkServiceOrderStatusValid(serviceOrder, "adicionar");
+
         if (serviceOrder.getUserTechnical() == null) {
             throw new UnprocessableEntityException("A Ordem de serviço com ID " + serviceOrder.getId() + " não possui um Tecnico responsavel. Adicione um tecnico a Ordem de Serviço primeiro");
         }
 
-       if (user.getRole() == RoleUser.TECHNICAL) {
+        if (user.getRole() == RoleUser.TECHNICAL) {
             if (!serviceOrder.getUserTechnical().getId().equals(user.getId())) {
                 throw new UnprocessableEntityException("A Ordem de Serviço com ID " + serviceOrder.getId() + " não pertence ao tecnico que fez a solicitação");
             }
@@ -64,12 +71,14 @@ public class ServiceOrderTaskService {
     }
 
     @Transactional
-    public void  deleteServiceOrderTaskById(Long serviceOrderTaskId, User user) {
-        var task =  repository.findById(serviceOrderTaskId);
+    public void deleteServiceOrderTaskById(Long serviceOrderTaskId, User user) {
+        var task = repository.findById(serviceOrderTaskId);
 
-        if(task.isEmpty()){
-            throw new EntityNotFoundException("Não foi encontrado Tarefa de Ordem de Serviço com ID " + serviceOrderTaskId);
+        if (task.isEmpty()) {
+            throw new EntityNotFoundException("Não foi encontrado Tarefa com ID " + serviceOrderTaskId);
         }
+
+        checkServiceOrderStatusValid(task.get().getServiceOrder(), "deletar");
 
         var serviceOrder = checkExistsServiceOrder(task.get().getServiceOrder().getId());
 
@@ -103,4 +112,13 @@ public class ServiceOrderTaskService {
 
         return serviceCatalog.get();
     }
+
+    private void checkServiceOrderStatusValid(ServiceOrder serviceOrder, String wordKey) {
+
+        if (serviceOrder.getStatus() == ServiceOrderStatus.DELIVERED || serviceOrder.getStatus() == ServiceOrderStatus.CANCELED || serviceOrder.getStatus() == ServiceOrderStatus.COMPLETED) {
+            throw new UnprocessableEntityException("Não é possivel " + wordKey + " Catalogo Serviço. Pois a ordem de serviço com ID " + serviceOrder.getId() + " vinculado a ela já foi finalizada e consta como '" + serviceOrder.getStatus().portugueseOption +"'");
+        }
+
+    }
+
 }

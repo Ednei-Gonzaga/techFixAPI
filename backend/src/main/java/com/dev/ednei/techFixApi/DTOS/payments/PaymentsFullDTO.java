@@ -14,10 +14,11 @@ public record PaymentsFullDTO(
         String paymentsMethod,
         String paymentStatus,
         LocalDateTime paidAt,
-        Long ServiceOrder
+        Long ServiceOrder,
+        LocalDateTime createdAt
 ) {
     public PaymentsFullDTO(Payment payment) {
         this(payment.getId(),payment.getLaborAmount(),payment.getPartsAmount(), payment.getDiscount(), payment.getTotalAmount(), payment.getPaymentMethod() == null ? null: payment.getPaymentMethod().name(),
-                payment.getPaymentStatus().name(), payment.getPaidAt(), payment.getServiceOrder().getId());
+                payment.getPaymentStatus().name(), payment.getPaidAt(), payment.getServiceOrder().getId(),  payment.getCreatedAt());
     }
 }

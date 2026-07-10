@@ -3,7 +3,6 @@ package com.dev.ednei.techFixApi.model.enums;
 public enum PaymentStatus {
     PENDING("PENDENTE"),
     PAID("PAGO"),
-    REFUNDED("REEMBOLSADO"),
     CANCELED("CANCELADO");
 
     public String portugueseOption;

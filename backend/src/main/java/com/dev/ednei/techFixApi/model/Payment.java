@@ -48,6 +48,9 @@ public class Payment {
     @JoinColumn(name = "id_service_order")
     private ServiceOrder serviceOrder;
 
+    @JoinColumn(name = "created_at")
+    private LocalDateTime createdAt;
+
     @OneToMany(mappedBy = "payment")
     private List<PaymentsHistory> paymentsHistory;
 
@@ -58,6 +61,7 @@ public class Payment {
         this.discount = 0.0;
         this.paymentStatus = PaymentStatus.PENDING;
         this.serviceOrder = serviceOrder;
+        this.createdAt = LocalDateTime.now();
     }
 
     public void autoAdjustPayments(Double laborAmount, Double partsAmount) {

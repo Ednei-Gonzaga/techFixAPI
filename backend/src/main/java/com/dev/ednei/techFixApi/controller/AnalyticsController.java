@@ -23,4 +23,9 @@ public class AnalyticsController {
     public ResponseEntity findDashboardSummaryRecord(@RequestParam(required = false) LocalDate start, @RequestParam(required = false) LocalDate end) {
         return ResponseEntity.ok(analyticsService.findDashboardMetrics(start, end));
     }
+
+    @GetMapping("/real-time-alerts")
+    public ResponseEntity findAlerts() {
+        return ResponseEntity.ok(analyticsService.findStockAlerts());
+    }
 }

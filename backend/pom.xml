@@ -132,6 +132,12 @@
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
+
+		<dependency>
+			<groupId>com.googlecode.libphonenumber</groupId>
+			<artifactId>libphonenumber</artifactId>
+			<version>8.12.10</version>
+		</dependency>
 	</dependencies>
 
 	<build>

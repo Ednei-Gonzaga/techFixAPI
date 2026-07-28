@@ -28,7 +28,7 @@ public class ClientController {
     }
 
     @PutMapping("/clients/{id}")
-    public ResponseEntity<ClientFullDTO> updateClient(@PathVariable("id") Long id, @RequestBody @Valid ClientUpdateDTO clientUpdateDto) {
+    public ResponseEntity<ClientFullDTO> updateClient(@PathVariable("id") Long id, @RequestBody @Valid ClientUpdateDTO clientUpdateDto) throws NumberParseException {
         var client = clientService.updateClient(id, clientUpdateDto);
         return ResponseEntity.ok(client);
     }

@@ -6,9 +6,11 @@ import com.dev.ednei.techFixApi.DTOS.client.ClientFullDTO;
 import com.dev.ednei.techFixApi.DTOS.client.ClientUpdateDTO;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.ConflictDataException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.model.Client;
 import com.dev.ednei.techFixApi.repository.ClientRepository;
 import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,6 +24,8 @@ public class ClientService {
 
     @Transactional
     public ClientFullDTO saveClient(ClientCreateDTO clientCreateDto) throws NumberParseException {
+        verificationNumberPhoneAndWhatsappIsValid(clientCreateDto.phone(), clientCreateDto.whatsapp());
+
         var client = new Client(clientCreateDto);
 
         if (repository.existsByCpf(clientCreateDto.cpf())) {
@@ -33,7 +37,7 @@ public class ClientService {
     }
 
     @Transactional
-    public ClientFullDTO updateClient(Long id, ClientUpdateDTO clientUpdateDto) {
+    public ClientFullDTO updateClient(Long id, ClientUpdateDTO clientUpdateDto) throws NumberParseException {
         var client = repository.findById(id);
 
         if (client.isEmpty()) {
@@ -43,6 +47,8 @@ public class ClientService {
         if (repository.existsByCpf(clientUpdateDto.cpf()) && !client.get().getCpf().equals(clientUpdateDto.cpf())) {
             throw new ConflictDataException("Já existe cliente com CPF informado");
         }
+
+        verificationNumberPhoneAndWhatsappIsValid(clientUpdateDto.phone(), clientUpdateDto.whatsapp());
 
         client.get().updateClient(clientUpdateDto);
         repository.save(client.get());
@@ -74,5 +80,19 @@ public class ClientService {
     public Page<ClientFullDTO> getClientByName(String name, Pageable pageable) {
         var client = repository.findByNameClient(name, pageable);
         return client.map(ClientFullDTO::new);
+    }
+
+    //metodos Privados
+    private void verificationNumberPhoneAndWhatsappIsValid(String phone, String whatsapp) throws NumberParseException {
+        PhoneNumberUtil util = PhoneNumberUtil.getInstance();
+        var parsePhone = util.parse(phone, "BR");
+        var parseWhatsapp = util.parse(whatsapp, "BR");
+
+        if(!util.isValidNumber(parsePhone)) {
+            throw new InvalidParameterException("Número do campo 'phone' está no formato incorreto. Verifique se contém DDD e é um número válido no Brasil e na região do DDD.");
+        }
+        if(!util.isValidNumber(parseWhatsapp) || util.getNumberType(parseWhatsapp) != PhoneNumberUtil.PhoneNumberType.MOBILE){
+            throw new InvalidParameterException("Número de Whatsapp está no formato incorreto.  Verifique se contem DDD e '9' no começo do número e se é  um número valilido a região do DDD.");
+        }
     }
 }

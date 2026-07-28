@@ -5,6 +5,7 @@ import com.dev.ednei.techFixApi.DTOS.client.ClientCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.client.ClientFullDTO;
 import com.dev.ednei.techFixApi.DTOS.client.ClientUpdateDTO;
 import com.dev.ednei.techFixApi.service.ClientService;
+import com.google.i18n.phonenumbers.NumberParseException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,7 +22,7 @@ public class ClientController {
     private ClientService clientService;
 
     @PostMapping("/clients")
-    public ResponseEntity<ClientFullDTO> createClient(@RequestBody @Valid  ClientCreateDTO clientDto) {
+    public ResponseEntity<ClientFullDTO> createClient(@RequestBody @Valid  ClientCreateDTO clientDto) throws NumberParseException {
         var client = clientService.saveClient(clientDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(client);
     }

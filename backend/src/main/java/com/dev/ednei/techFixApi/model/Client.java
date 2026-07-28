@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.model;
 import com.dev.ednei.techFixApi.DTOS.client.ClientCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.client.ClientUpdateDTO;
 import com.dev.ednei.techFixApi.model.dataModeling.PeopleData;
+import com.google.i18n.phonenumbers.NumberParseException;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -21,7 +22,7 @@ public class Client extends PeopleData {
     @OneToMany(mappedBy = "client")
     private List<ServiceRequests> serviceRequests;
 
-    public Client(ClientCreateDTO clientCreateDto) {
+    public Client(ClientCreateDTO clientCreateDto) throws NumberParseException {
         super(clientCreateDto.name(), clientCreateDto.cpf(), clientCreateDto.phone(),  clientCreateDto.whatsapp());
     }
 

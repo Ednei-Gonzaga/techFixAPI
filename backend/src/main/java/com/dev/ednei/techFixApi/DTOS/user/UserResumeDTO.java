@@ -4,6 +4,10 @@ import com.dev.ednei.techFixApi.model.Employee;
 import jakarta.validation.constraints.NotBlank;
 
 public record UserResumeDTO(
+        Long UserId,
+
+        Long employeeId,
+
         String role,
 
         String name,
@@ -17,6 +21,6 @@ public record UserResumeDTO(
         String email
 ) {
     public UserResumeDTO(Employee employee) {
-        this(employee.getUser().getLogin(),  employee.getName(), employee.getCpf(), employee.getPhone(), employee.getWhatsapp(), employee.getEmail());
+        this(employee.getUser().getId(), employee.getId(),employee.getUser().getRole().name(),  employee.getName(), employee.getCpf(), employee.getPhone(), employee.getWhatsapp(), employee.getEmail());
     }
 }

@@ -6,6 +6,7 @@ import com.dev.ednei.techFixApi.DTOS.user.UserCreateDTO;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.service.EmailService;
 import com.dev.ednei.techFixApi.service.UserService;
+import com.google.i18n.phonenumbers.NumberParseException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class UserController {
     private EmailService emailService;
 
     @PostMapping("/users")
-    public ResponseEntity saveUser(@RequestBody @Valid UserCreateDTO userCreateDTO) {
+    public ResponseEntity saveUser(@RequestBody @Valid UserCreateDTO userCreateDTO) throws NumberParseException {
         var user = userService.saveUser(userCreateDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }

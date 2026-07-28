@@ -4,9 +4,13 @@ import com.dev.ednei.techFixApi.DTOS.user.*;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.*;
 import com.dev.ednei.techFixApi.model.Employee;
 import com.dev.ednei.techFixApi.model.User;
+import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import com.dev.ednei.techFixApi.model.enums.StatusVerificationCode;
 import com.dev.ednei.techFixApi.repository.EmployeeRepository;
 import com.dev.ednei.techFixApi.repository.UserRepository;
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,8 +38,9 @@ public class UserService {
     @Autowired
     private EmailService emailService;
 
+
     @Transactional
-    public UserResumeDTO saveUser(UserCreateDTO userCreateDTO) {
+    public UserResumeDTO saveUser(UserCreateDTO userCreateDTO) throws NumberParseException {
         var passwordDefault = generatePasswordDefault();
         var textForEmail = "Olá " + userCreateDTO.name().split(" ")[0].toUpperCase() + "!\n" + """
                 Parabéns por ter entrado para nossa empresa! Estamos Felizes e anciosos para te receber no nosso time TechFix.
@@ -44,7 +49,12 @@ public class UserService {
         var user = new User(userCreateDTO, bCryptPasswordEncoder.encode(passwordDefault));
         var employee = new Employee(userCreateDTO, user);
 
-        if(employeeRepository.existsByEmail(employee.getEmail())) {
+        //vrtifica se os dados de numeros enviados são valores validos
+        EmployeeService.verificationNumberPhoneAndWhatsappIsValid(userCreateDTO.phone().replaceAll("[^0-9]", ""), userCreateDTO.whatsapp().replaceAll("[^0-9]", ""));
+
+        verificationRoleIsValid(userCreateDTO.role());
+
+        if (employeeRepository.existsByEmail(employee.getEmail())) {
             throw new ConflictDataException("Já existe um usuario cadastrado com esse email");
         }
 
@@ -68,10 +78,10 @@ public class UserService {
 
     @Transactional
     public void disableUser(Long idUser) {
-        var user =  repository.findById(idUser);
+        var user = repository.findById(idUser);
 
-        if(user.isEmpty()){
-            throw new EntityNotFoundException("Não foi encontrado nenhum usuario com ID "+idUser);
+        if (user.isEmpty()) {
+            throw new EntityNotFoundException("Não foi encontrado nenhum usuario com ID " + idUser);
         }
 
         user.get().disableUser();
@@ -97,7 +107,7 @@ public class UserService {
 
 
         if (isExpiredCode || (verificationCodes.getStatus() != StatusVerificationCode.ACTIVE)) {
-            throw new InvalidParameterException("O codigo informado já foi usado ou está expirado");
+            throw new AccessForbiddenException("O codigo informado já foi usado ou está expirado");
         }
 
         if (verificationCodes.getUser().getId() != user.get().getId()) {
@@ -148,4 +158,11 @@ public class UserService {
         String messagePasswordAltered = "Sua senha foi alterada, como você pediu.\nVocê ja pode acessar o TechFix com as novas informações de LOGIN.";
         emailService.sentEmail(email, "Senha Alterada", messagePasswordAltered);
     }
+
+    private void verificationRoleIsValid(String role){
+        if(RoleUser.forValue(role) == null){
+            throw new InvalidParameterException("Role usuário informado("+ role +") está Incorreto.");
+        }
+    }
+
 }

@@ -5,6 +5,7 @@ import com.dev.ednei.techFixApi.DTOS.employees.EmployeeProfileUpdateDTO;
 import com.dev.ednei.techFixApi.DTOS.employees.EmployeeRequestCpf;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.service.EmployeeService;
+import com.google.i18n.phonenumbers.NumberParseException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -20,13 +21,13 @@ public class EmployeeController {
     private EmployeeService employeeService;
 
     @PutMapping("/employees/{id}")
-    public ResponseEntity updateEmployeeForId(@PathVariable Long id, @RequestBody @Valid EmployeeManagerUpdateDTO dto) {
+    public ResponseEntity updateEmployeeForId(@PathVariable Long id, @RequestBody @Valid EmployeeManagerUpdateDTO dto) throws NumberParseException {
         var employee = employeeService.updateEmployeeForId(id, dto);
         return ResponseEntity.status(HttpStatus.OK).body(employee);
     }
 
     @PutMapping("/employees/me")
-    public ResponseEntity updateEmployeeForMe(@RequestBody EmployeeProfileUpdateDTO dto, @AuthenticationPrincipal User user) {
+    public ResponseEntity updateEmployeeForMe(@RequestBody EmployeeProfileUpdateDTO dto, @AuthenticationPrincipal User user) throws NumberParseException {
         var employee = employeeService.updateEmployeeForProfileUser(user, dto);
         return ResponseEntity.status(HttpStatus.OK).body(employee);
     }

@@ -8,6 +8,7 @@ import com.dev.ednei.techFixApi.infra.exceptions.errors.ConflictDataException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
 import com.dev.ednei.techFixApi.model.Client;
 import com.dev.ednei.techFixApi.repository.ClientRepository;
+import com.google.i18n.phonenumbers.NumberParseException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,7 +21,7 @@ public class ClientService {
     private ClientRepository repository;
 
     @Transactional
-    public ClientFullDTO saveClient(ClientCreateDTO clientCreateDto) {
+    public ClientFullDTO saveClient(ClientCreateDTO clientCreateDto) throws NumberParseException {
         var client = new Client(clientCreateDto);
 
         if (repository.existsByCpf(clientCreateDto.cpf())) {

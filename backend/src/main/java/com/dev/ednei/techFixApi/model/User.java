@@ -67,7 +67,7 @@ public class User implements UserDetails {
     private List<PaymentsHistory> paymentsHistory;
 
     public User(UserCreateDTO userCreateDTO, String password) {
-        this.login = userCreateDTO.cpf();
+        this.login = userCreateDTO.cpf().replaceAll("[^0-9]", "");
         this.password = password;
         this.status = true;
         this.createdAt = LocalDateTime.now();

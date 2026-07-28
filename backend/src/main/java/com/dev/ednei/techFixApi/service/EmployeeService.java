@@ -3,10 +3,14 @@ package com.dev.ednei.techFixApi.service;
 import com.dev.ednei.techFixApi.DTOS.employees.*;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.ConflictDataException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.model.Employee;
 import com.dev.ednei.techFixApi.model.User;
+import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import com.dev.ednei.techFixApi.repository.EmployeeRepository;
 import com.dev.ednei.techFixApi.repository.UserRepository;
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,7 +39,7 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResumeDTO updateEmployeeForId(Long id, EmployeeManagerUpdateDTO dto) {
+    public EmployeeResumeDTO updateEmployeeForId(Long id, EmployeeManagerUpdateDTO dto) throws NumberParseException {
         var employee = repository.findById(id);
 
         if (employee.isEmpty()) {
@@ -62,6 +66,8 @@ public class EmployeeService {
             }
         }
 
+        verificationNumberPhoneAndWhatsappIsValid(dto.phone().replaceAll("[^0-9]", ""), dto.whatsapp().replaceAll("[^0-9]", ""));
+
         employee.get().updateById(dto);
         repository.save(employee.get());
 
@@ -72,13 +78,15 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResumeDTO updateEmployeeForProfileUser(User user, EmployeeProfileUpdateDTO dto) {
+    public EmployeeResumeDTO updateEmployeeForProfileUser(User user, EmployeeProfileUpdateDTO dto) throws NumberParseException {
         var employee = repository.findByUserId(user.getId());
         if (StringUtils.hasText(dto.email())) {
             if (repository.existsByEmail(dto.email()) && !employee.get().getEmail().equals(dto.email())) {
                 throw new ConflictDataException("Já existe um Funcionario cadastrado com esse email");
             }
         }
+
+        verificationNumberPhoneAndWhatsappIsValid(dto.phone().replaceAll("[^0-9]", ""), dto.whatsapp().replaceAll("[^0-9]", ""));
 
         employee.get().updateByEmployeeLogged(dto);
         repository.save(employee.get());
@@ -136,6 +144,9 @@ public class EmployeeService {
         return employee.map(EmployeeResumeDTO::new);
     }
 
+    //metodos usados em outras classes
+
+
 
     //Metodos privados
 
@@ -153,4 +164,20 @@ public class EmployeeService {
         var employees = repository.findByStatusOrName(status, name, pageable);
         return employees.map(EmployeeFullDTO::new);
     }
+
+    public static void verificationNumberPhoneAndWhatsappIsValid(String phone, String whatsapp) throws NumberParseException {
+        PhoneNumberUtil util = PhoneNumberUtil.getInstance();
+        var parsePhone = util.parse(phone, "BR");
+        var parseWhatsapp = util.parse(whatsapp, "BR");
+
+        if(!util.isValidNumber(parsePhone)) {
+            throw new InvalidParameterException("Número do campo 'phone' está no formato incorreto. Verifique se contém DDD e é um número válido no Brasil e na região do DDD.");
+        }
+        if(!util.isValidNumber(parseWhatsapp) || util.getNumberType(parseWhatsapp) != PhoneNumberUtil.PhoneNumberType.MOBILE){
+            throw new InvalidParameterException("Número de Whatsapp está no formato incorreto.  Verifique se contem DDD e '9' no começo do número e se é  um número valilido a região do DDD.");
+        }
+    }
+
+
 }
+

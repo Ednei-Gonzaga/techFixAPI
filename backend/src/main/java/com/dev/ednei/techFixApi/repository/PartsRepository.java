@@ -42,7 +42,7 @@ public interface PartsRepository extends JpaRepository<Parts, Long> {
         GROUP BY p.name, p.id
         HAVING SUM(CASE WHEN so.dateTimeStart BETWEEN :dateTimeStartPreviousMonth AND :dateTimeEndPreviousMonth THEN item.quantity ELSE 0 END) 
                >= (p.stockQuantity + SUM(CASE WHEN so.dateTimeStart BETWEEN :dateTimeStartCurrentMonth AND :dateTimeEndCurrentMonth THEN item.quantity ELSE 0 END))
-        OR p.stockQuantity <= 2
+        OR p.stockQuantity <= 1
                 """)
         List<StockAlertsDTO> findLowStockAlertsRed(
                 @Param("dateTimeStartPreviousMonth") LocalDateTime dateTimeStartPreviousMonth,

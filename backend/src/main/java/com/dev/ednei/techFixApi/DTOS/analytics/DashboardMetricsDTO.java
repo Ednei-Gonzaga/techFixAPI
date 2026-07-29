@@ -31,7 +31,7 @@ public record DashboardMetricsDTO(
     }
 
     public record TopCustomerDTO(
-            Long clientId,
+            Long client,
             String name,
             Double totalSpent
     ) {}

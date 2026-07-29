@@ -20,7 +20,7 @@ public class PartController {
     @Autowired
     private PartService partService;
 
-    @PostMapping("/parts")
+    @PostMapping(value = "/parts")
     public ResponseEntity<PartFullDTO> savePart(@RequestBody @Valid PartCreateDTO partCreateDto){
         var part = partService.saveParte(partCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(part);
@@ -66,3 +66,5 @@ public class PartController {
         return ResponseEntity.ok(part);
     }
 }
+
+

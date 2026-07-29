@@ -2,6 +2,7 @@ package com.dev.ednei.techFixApi.DTOS.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.hibernate.validator.constraints.br.CPF;
 
 public record UserCreateDTO(
         @NotBlank
@@ -11,6 +12,7 @@ public record UserCreateDTO(
         String name,
 
         @NotBlank
+        @CPF(message = "CPF inválido ou formato incorreto.")
         String cpf,
 
         @NotBlank
@@ -23,4 +25,5 @@ public record UserCreateDTO(
         @Email(message = "Email deve ter um formato valido")
         String email
 ) {
+
 }

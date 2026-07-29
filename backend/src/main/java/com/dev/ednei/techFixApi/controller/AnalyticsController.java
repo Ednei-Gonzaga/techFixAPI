@@ -1,5 +1,7 @@
 package com.dev.ednei.techFixApi.controller;
 
+import com.dev.ednei.techFixApi.DTOS.analytics.DashboardAlertsDTO;
+import com.dev.ednei.techFixApi.DTOS.analytics.DashboardMetricsDTO;
 import com.dev.ednei.techFixApi.repository.ServiceOrderItemRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
 import com.dev.ednei.techFixApi.service.AnalyticsService;
@@ -20,12 +22,12 @@ public class AnalyticsController {
     private AnalyticsService analyticsService;
 
     @GetMapping("/dashboard/metrics")
-    public ResponseEntity findDashboardSummaryRecord(@RequestParam(required = false) LocalDate start, @RequestParam(required = false) LocalDate end) {
+    public ResponseEntity<DashboardMetricsDTO> findDashboardSummaryRecord(@RequestParam(required = false) LocalDate start, @RequestParam(required = false) LocalDate end) {
         return ResponseEntity.ok(analyticsService.findDashboardMetrics(start, end));
     }
 
     @GetMapping("/real-time-alerts")
-    public ResponseEntity findAlerts() {
+    public ResponseEntity<DashboardAlertsDTO> findAlerts() {
         return ResponseEntity.ok(analyticsService.findStockAlerts());
     }
 }

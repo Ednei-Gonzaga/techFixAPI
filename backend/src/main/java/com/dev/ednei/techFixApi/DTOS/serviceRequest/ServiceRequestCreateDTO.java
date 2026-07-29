@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 public record ServiceRequestCreateDTO(
 
         @NotBlank
-        String Device,
+        String device,
 
         @NotBlank
         String category,

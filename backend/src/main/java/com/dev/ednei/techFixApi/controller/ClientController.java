@@ -4,7 +4,10 @@ import com.dev.ednei.techFixApi.DTOS.client.ClientCpfRequest;
 import com.dev.ednei.techFixApi.DTOS.client.ClientCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.client.ClientFullDTO;
 import com.dev.ednei.techFixApi.DTOS.client.ClientUpdateDTO;
+import com.dev.ednei.techFixApi.DTOS.evolutionApi.NotificationSituationMessageWhatsapp;
 import com.dev.ednei.techFixApi.service.ClientService;
+import com.dev.ednei.techFixApi.service.externalApis.evolutionApi.EvolutionApiService;
+import com.dev.ednei.techFixApi.service.externalApis.evolutionApi.WhatsAppMessagesUtil;
 import com.google.i18n.phonenumbers.NumberParseException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/v2")
@@ -56,4 +61,5 @@ public class ClientController {
        }
        return ResponseEntity.ok(client);
     }
+
 }

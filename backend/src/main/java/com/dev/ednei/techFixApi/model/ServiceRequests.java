@@ -41,7 +41,7 @@ public class ServiceRequests {
     private List<ServiceOrder> serviceOrder;
 
     public ServiceRequests(ServiceRequestCreateDTO requestDto) {
-        this.device = requestDto.Device();
+        this.device = requestDto.device();
         this.category = CategoryDevice.toString(requestDto.category());
         this.problemDescription = requestDto.problemDescription();
         this.createdAt = LocalDateTime.now();

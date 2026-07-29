@@ -24,7 +24,7 @@ public class ServiceRequestController {
     @PostMapping("/service-requests")
     public ResponseEntity<ServiceRequestFullDTO> saveRequest(@RequestBody @Valid ServiceRequestCreateDTO requestDto, @AuthenticationPrincipal User user) {
         var serviceRequest = serviceRequestService.saveRequest(requestDto, user);
-        return new ResponseEntity<>(serviceRequest, HttpStatus.OK);
+        return new ResponseEntity<>(serviceRequest, HttpStatus.CREATED);
     }
 
     @PutMapping("/service-requests/{id}")

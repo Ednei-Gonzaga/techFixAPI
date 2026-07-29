@@ -18,7 +18,7 @@ public class VerificationCodesController {
     @Autowired
     private VerificationCodesService verificationCodesService;
 
-    @PostMapping("/password-reset/request-verification-codes")
+    @PostMapping("users/password-reset/request-verification-codes")
     public ResponseEntity generateCode(@RequestBody @Valid  UserEmailResetPassword userEmail){
         var codeResume = verificationCodesService.saveVerificationCodes(userEmail);
         return ResponseEntity.status(HttpStatus.CREATED).body(codeResume);

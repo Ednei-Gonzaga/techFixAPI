@@ -1,5 +1,6 @@
 package com.dev.ednei.techFixApi.service;
 
+import com.dev.ednei.techFixApi.DTOS.evolutionApi.NotificationSituationMessageWhatsapp;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderDetailDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderFullDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceOrder.ServiceOrderUpdateDTO;
@@ -14,9 +15,12 @@ import com.dev.ednei.techFixApi.model.enums.CategoryDevice;
 import com.dev.ednei.techFixApi.model.enums.PaymentStatus;
 import com.dev.ednei.techFixApi.model.enums.RoleUser;
 import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
+import com.dev.ednei.techFixApi.repository.ClientRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderTaskRepository;
 import com.dev.ednei.techFixApi.repository.UserRepository;
+import com.dev.ednei.techFixApi.service.externalApis.evolutionApi.EvolutionApiService;
+import com.dev.ednei.techFixApi.service.externalApis.evolutionApi.WhatsAppMessagesUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -45,9 +50,12 @@ public class ServiceOrderService {
     @Autowired
     private ServiceOrderTaskRepository serviceOrderTaskRepository;
 
+    @Autowired
+    private EvolutionApiService whatsappEvolutionApi;
 
+    //Metodos usados em controller
     @Transactional
-    public void saveServiceOrder(Long serviceRequestId, User user) {
+    public ServiceOrder saveServiceOrder(Long serviceRequestId, User user) throws IOException, InterruptedException { //Cadastra OS e envia Informaçãoes pra o Cliente
         var code = generateCode();
 
         while (repository.existsByIdentificationCode(code)) {
@@ -61,18 +69,21 @@ public class ServiceOrderService {
                 "Ordem de Serviço foi criada", ServiceOrderStatus.PENDING, ServiceOrderStatus.PENDING);
 
         serviceOrderHistoryService.saveHistoryOrder(orderHistoryCreate);
+
+        return serviceOrder;
     }
 
     @Transactional
-    public ServiceOrderFullDTO updateServiceOrder(Long serviceOrderId, ServiceOrderUpdateDTO orderDto, User user) {
+    public ServiceOrderFullDTO updateServiceOrder(Long serviceOrderId, ServiceOrderUpdateDTO orderDto, User user) throws IOException, InterruptedException {
         var serviceOrder = repository.findById(serviceOrderId);
-
         if (serviceOrder.isEmpty()) {
             throw new EntityNotFoundException("Não foi possivel encontrar Ordem de Serviço com ID " + serviceOrderId);
         }
 
         var oldStatus = serviceOrder.get().getStatus();
+        Boolean statusChanged = serviceOrder.get().getStatus() != ServiceOrderStatus.forValue(orderDto.status());
 
+        //Validação de Regras De negocios e Permissões
         if (orderDto.status() != null && ServiceOrderStatus.forValue(orderDto.status()) == null) {
             throw new InvalidParameterException("O status " + orderDto.status() + " não e valido");
         }
@@ -97,44 +108,20 @@ public class ServiceOrderService {
             }
         }
 
-        if (orderDto.userTechnical() != null && serviceOrder.get().getUserTechnical() != null && user.getRole() != RoleUser.MANAGER
-                && !orderDto.userTechnical().equals(serviceOrder.get().getUserTechnical().getId())) {
-            throw new AccessForbiddenException("Somente o usuario do tipo Gerente pode atualizar ID do tecnico depois que já foi atribuido a Ordem de Serviço");
-        }
-
-        if (user.getRole() == RoleUser.TECHNICAL) {
-            if (ServiceOrderStatus.forValue(orderDto.status()) == (ServiceOrderStatus.DELIVERED)) {
-                throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Entregue");
-            }
-            if (ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED) {
-                throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Cancelado");
-            }
-        }
-
-        if (user.getRole() == RoleUser.ATTENDANT) {
-            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.DELIVERED && ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.CANCELED)) {
-                throw new AccessForbiddenException("Usuario do tipo Atendente só pode atualizar Status para Entregue ou Cancelado");
-            }
-
-            if (StringUtils.hasText(orderDto.status()) && ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED
-                    && serviceOrder.get().getStatus() != ServiceOrderStatus.PENDING && serviceOrder.get().getStatus() != ServiceOrderStatus.CANCELED) {
-                throw new AccessForbiddenException("Atendente só pode Cancelar Ordem de Serviço se status for Pedente");
-            }
-
-            if (StringUtils.hasText(orderDto.status()) && ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.DELIVERED
-                    && serviceOrder.get().getStatus() != ServiceOrderStatus.COMPLETED) {
-                throw new AccessForbiddenException("Atendente só pode atualizar para Entregue a Ordem de Serviço se status for Completado");
-            }
-        }
+        validatePermissionByUser(serviceOrder.get(), orderDto, user);
 
         validateExistsTaskForCompleted(orderDto.status(), serviceOrder.get().getId());
 
         validatePaymentForDelivery(orderDto.status(), serviceOrder.get().getId());
 
+
+        //Salva as alterações
         serviceOrder.get().updateServiceOrder(orderDto);
         repository.save(serviceOrder.get());
 
-        if (StringUtils.hasText(orderDto.status())) {
+
+       //Ações a serem execultadas quando uma ordem de Serviço atualiza
+        if (StringUtils.hasText(orderDto.status())) { //Armazena no historico as atualizações feitas
             var newStatus = ServiceOrderStatus.forValue(orderDto.status());
             if (oldStatus != newStatus) {
                 var notes = "Ordem de Serviço atualizada de " + oldStatus.portugueseOption.replace("_", " ") + " para " + newStatus.portugueseOption.replace("_", " ");
@@ -146,6 +133,10 @@ public class ServiceOrderService {
         }
 
         processPayment(serviceOrder.get(), user);
+
+        if (statusChanged) {// Envia a messagem somente se o status não for o mesmo de antigamente
+            sendUpdateMessageWhatsapp(serviceOrder.get().getId(), serviceOrder.get().getStatus().portugueseOption);
+        }
 
         return new ServiceOrderFullDTO(serviceOrder.get());
     }
@@ -331,6 +322,22 @@ public class ServiceOrderService {
         }
     }
 
+    private NotificationSituationMessageWhatsapp sendUpdateMessageWhatsapp(Long orderId, String status) throws IOException, InterruptedException {
+        var serviceOrderDetails = repository.getDetailsById(orderId);
+        var statusOrder = ServiceOrderStatus.forValue(status);
+
+        if(statusOrder == ServiceOrderStatus.CANCELED) {
+            return whatsappEvolutionApi.sendMessageWhatsapp(WhatsAppMessagesUtil.createMessageOrderServiceCanceled(serviceOrderDetails.get().nameClient()), serviceOrderDetails.get().whatsapp());
+        }
+
+        if(statusOrder == ServiceOrderStatus.COMPLETED) {
+            return whatsappEvolutionApi.sendMessageWhatsapp(WhatsAppMessagesUtil.createMessageOrderServiceCompleted(serviceOrderDetails.get().nameClient()), serviceOrderDetails.get().whatsapp());
+        }
+
+        return whatsappEvolutionApi.sendMessageWhatsapp(WhatsAppMessagesUtil.createMessageUpdateOs(serviceOrderDetails.get().nameClient(), status.replace("_", " ")), serviceOrderDetails.get().whatsapp());
+    }
+
+    //Metodos para validações
     private void validatePaymentForDelivery(String newStatus, Long serviceOrderId) {
         var payment = paymentService.findByIdServiceOrderWithoutException(serviceOrderId);
 
@@ -369,4 +376,35 @@ public class ServiceOrderService {
         }
     }
 
+    private void validatePermissionByUser(ServiceOrder serviceOrder, ServiceOrderUpdateDTO orderDto, User user){
+        if (orderDto.userTechnical() != null && serviceOrder.getUserTechnical() != null && user.getRole() != RoleUser.MANAGER
+                && !orderDto.userTechnical().equals(serviceOrder.getUserTechnical().getId())) {
+            throw new AccessForbiddenException("Somente o usuario do tipo Gerente pode atualizar ID do tecnico depois que já foi atribuido a Ordem de Serviço");
+        }
+
+        if (user.getRole() == RoleUser.TECHNICAL) {
+            if (ServiceOrderStatus.forValue(orderDto.status()) == (ServiceOrderStatus.DELIVERED)) {
+                throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Entregue");
+            }
+            if (ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED) {
+                throw new AccessForbiddenException("Somente Gerente ou Atendente pode atualizar status para Cancelado");
+            }
+        }
+
+        if (user.getRole() == RoleUser.ATTENDANT) {
+            if (StringUtils.hasText(orderDto.status()) && (ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.DELIVERED && ServiceOrderStatus.forValue(orderDto.status()) != ServiceOrderStatus.CANCELED)) {
+                throw new AccessForbiddenException("Usuario do tipo Atendente só pode atualizar Status para Entregue ou Cancelado");
+            }
+
+            if (StringUtils.hasText(orderDto.status()) && ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.CANCELED
+                    && serviceOrder.getStatus() != ServiceOrderStatus.PENDING && serviceOrder.getStatus() != ServiceOrderStatus.CANCELED) {
+                throw new AccessForbiddenException("Atendente só pode Cancelar Ordem de Serviço se status for Pedente");
+            }
+
+            if (StringUtils.hasText(orderDto.status()) && ServiceOrderStatus.forValue(orderDto.status()) == ServiceOrderStatus.DELIVERED
+                    && serviceOrder.getStatus() != ServiceOrderStatus.COMPLETED) {
+                throw new AccessForbiddenException("Atendente só pode atualizar para Entregue a Ordem de Serviço se status for Completado");
+            }
+        }
+    }
 }

@@ -23,4 +23,5 @@ public record ServiceOrderDetailDTO(
         Long userTechnical,
         Long serviceRequest
 ) {
+
 }

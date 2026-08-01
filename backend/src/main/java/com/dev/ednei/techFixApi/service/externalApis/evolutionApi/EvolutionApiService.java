@@ -105,7 +105,7 @@ public class EvolutionApiService {
 
             if (!responseCheckNumberObject[0].exists()) {
                 status = StatusSendWhatsapp.FAILED;
-                detail = "Numero informado não é válido ou não está cadastrado no Whatsapp";
+                detail = "Numero cadastrado do cliente não é válido ou não está registrado no WhatsApp";
             } else {
                 var body = Map.of("number", number, "text", message, "delay", 20000);
                 var sendMessage = httpService.post(server + "/message/sendText/" + instanceStandard, objectMapper.writeValueAsString(body), arrayList);

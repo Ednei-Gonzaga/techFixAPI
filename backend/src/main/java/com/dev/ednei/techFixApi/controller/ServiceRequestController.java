@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.controller;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestFullDTO;
 import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestUpdateDTO;
+import com.dev.ednei.techFixApi.DTOS.serviceRequest.ServiceRequestWithNotificationAndCodeDTO;
 import com.dev.ednei.techFixApi.model.User;
 import com.dev.ednei.techFixApi.service.ServiceRequestService;
 import jakarta.validation.Valid;
@@ -14,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+
 
 @RestController
 @RequestMapping("/api/v2")
@@ -22,7 +25,7 @@ public class ServiceRequestController {
     private ServiceRequestService serviceRequestService;
 
     @PostMapping("/service-requests")
-    public ResponseEntity<ServiceRequestFullDTO> saveRequest(@RequestBody @Valid ServiceRequestCreateDTO requestDto, @AuthenticationPrincipal User user) {
+    public ResponseEntity<ServiceRequestWithNotificationAndCodeDTO> saveRequest(@RequestBody @Valid ServiceRequestCreateDTO requestDto, @AuthenticationPrincipal User user) throws IOException, InterruptedException {
         var serviceRequest = serviceRequestService.saveRequest(requestDto, user);
         return new ResponseEntity<>(serviceRequest, HttpStatus.CREATED);
     }

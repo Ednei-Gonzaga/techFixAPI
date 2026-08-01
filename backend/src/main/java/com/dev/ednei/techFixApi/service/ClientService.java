@@ -92,7 +92,7 @@ public class ClientService {
             throw new InvalidParameterException("Número do campo 'phone' está no formato incorreto. Verifique se contém DDD e é um número válido no Brasil e na região do DDD.");
         }
         if(!util.isValidNumber(parseWhatsapp) || util.getNumberType(parseWhatsapp) != PhoneNumberUtil.PhoneNumberType.MOBILE){
-            throw new InvalidParameterException("Número de Whatsapp está no formato incorreto.  Verifique se contem DDD e '9' no começo do número e se é  um número valilido a região do DDD.");
+            throw new InvalidParameterException("Número de Whatsapp está no formato incorreto.  Verifique se contem DDD e '9' no começo do número e se é  um número válido a região do DDD.");
         }
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -24,7 +25,7 @@ public class ServiceOrderController {
     private ServiceOrderService serviceOrderService;
 
     @PutMapping("/service-orders/{id}")
-    public ResponseEntity<ServiceOrderFullDTO> updateServiceOrder(@PathVariable Long id, @RequestBody ServiceOrderUpdateDTO orderDto, @AuthenticationPrincipal User user) {
+    public ResponseEntity<ServiceOrderFullDTO> updateServiceOrder(@PathVariable Long id, @RequestBody ServiceOrderUpdateDTO orderDto, @AuthenticationPrincipal User user) throws IOException, InterruptedException {
         var serviceOrder = serviceOrderService.updateServiceOrder(id, orderDto, user);
         return ResponseEntity.ok().body(serviceOrder);
     }

@@ -9,6 +9,7 @@ import com.dev.ednei.techFixApi.infra.exceptions.errors.UnprocessableEntityExcep
 import com.dev.ednei.techFixApi.model.*;
 import com.dev.ednei.techFixApi.model.enums.PaymentMethod;
 import com.dev.ednei.techFixApi.model.enums.PaymentStatus;
+import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import com.dev.ednei.techFixApi.repository.PaymentRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderItemRepository;
 import com.dev.ednei.techFixApi.repository.ServiceOrderRepository;
@@ -91,6 +92,11 @@ public class PaymentService {
 
         if (payment.get().getPaymentMethod() == null && PaymentStatus.forValue(requestStatus.paymentStatus()) == PaymentStatus.PAID) {
             throw new UnprocessableEntityException("Para atualizar status para PAGO e necessario preencher primeiro qual foi o Metodo de Pagamento");
+        }
+
+        //Verifica se Service Order foi completado
+        if(!checkServiceOrderIsCompleted(id) && PaymentStatus.forValue(requestStatus.paymentStatus()) == PaymentStatus.PAID ){
+            throw new UnprocessableEntityException("A Ordem de Serviço atribuido a esse pagamento não foi Completado Ainda. Finalize a OS primeiro antes de concluir pagamento");
         }
 
         payment.get().updateStatus(PaymentStatus.forValue(requestStatus.paymentStatus()));
@@ -210,6 +216,17 @@ public class PaymentService {
         }
 
         return payment.get();
+    }
+
+    // Não permitir atualizar Pagamaneto para pago Se a OS não for COMPLETED
+    private Boolean checkServiceOrderIsCompleted(Long id){
+        var serviceOrder = serviceOrderRepository.findById(id);
+
+        if (serviceOrder.get().getStatus() == ServiceOrderStatus.COMPLETED) {
+            return true;
+        }
+
+        return false;
     }
 
 }

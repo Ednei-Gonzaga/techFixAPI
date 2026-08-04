@@ -103,9 +103,10 @@ public class ServiceOrderService {
                 throw new EntityNotFoundException("Não foi possivel encontrar Tecnico com ID " + orderDto.userTechnical());
             }
 
-            if (userTechnical.get().getRole() != RoleUser.TECHNICAL) {
+            if (userTechnical.get().getRole() != RoleUser.TECHNICAL && userTechnical.get().getRole() != RoleUser.MANAGER) {
                 throw new UnprocessableEntityException("A ordem de serviço deve ser atribuida somente ao usuario do tipo Tecnico");
             }
+
         }
 
         validatePermissionByUser(serviceOrder.get(), orderDto, user);

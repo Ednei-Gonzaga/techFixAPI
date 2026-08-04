@@ -66,7 +66,7 @@ public class EmployeeService {
             }
         }
 
-        verificationNumberPhoneAndWhatsappIsValid(dto.phone().replaceAll("[^0-9]", ""), dto.whatsapp().replaceAll("[^0-9]", ""));
+        verificationNumberPhoneAndWhatsappIsValid(dto.phone(), dto.whatsapp());
 
         employee.get().updateById(dto);
         repository.save(employee.get());
@@ -86,7 +86,7 @@ public class EmployeeService {
             }
         }
 
-        verificationNumberPhoneAndWhatsappIsValid(dto.phone().replaceAll("[^0-9]", ""), dto.whatsapp().replaceAll("[^0-9]", ""));
+        verificationNumberPhoneAndWhatsappIsValid(dto.phone(), dto.whatsapp());
 
         employee.get().updateByEmployeeLogged(dto);
         repository.save(employee.get());
@@ -167,14 +167,24 @@ public class EmployeeService {
 
     public static void verificationNumberPhoneAndWhatsappIsValid(String phone, String whatsapp) throws NumberParseException {
         PhoneNumberUtil util = PhoneNumberUtil.getInstance();
-        var parsePhone = util.parse(phone, "BR");
-        var parseWhatsapp = util.parse(whatsapp, "BR");
 
-        if(!util.isValidNumber(parsePhone)) {
-            throw new InvalidParameterException("Número do campo 'phone' está no formato incorreto. Verifique se contém DDD e é um número válido no Brasil e na região do DDD.");
+
+        if(StringUtils.hasText(phone)){
+
+            var parsePhone = util.parse(phone.replaceAll("[^0-9]", ""), "BR");
+            if(!util.isValidNumber(parsePhone)) {
+                throw new InvalidParameterException("Número do campo 'phone' está no formato incorreto. Verifique se contém DDD e é um número válido no Brasil e na região do DDD.");
+            }
+
         }
-        if(!util.isValidNumber(parseWhatsapp) || util.getNumberType(parseWhatsapp) != PhoneNumberUtil.PhoneNumberType.MOBILE){
-            throw new InvalidParameterException("Número de Whatsapp está no formato incorreto.  Verifique se contem DDD e '9' no começo do número e se é  um número valilido a região do DDD.");
+
+        if(StringUtils.hasText(whatsapp)){
+
+            var parseWhatsapp = util.parse(whatsapp.replaceAll("[^0-9]", ""), "BR");
+            if(!util.isValidNumber(parseWhatsapp) || util.getNumberType(parseWhatsapp) != PhoneNumberUtil.PhoneNumberType.MOBILE){
+                throw new InvalidParameterException("Número de Whatsapp está no formato incorreto.  Verifique se contem DDD e '9' no começo do número e se é  um número valilido a região do DDD.");
+            }
+
         }
     }
 

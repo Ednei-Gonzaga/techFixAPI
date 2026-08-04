@@ -57,7 +57,7 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v2/service-order-items/service-order/*","/api/v2/employees/me", "/api/v2/parts/**", "/api/v2/parts", "/api/v2/service-catalogs", "/api/v2/service-requests/*", "/api/v2/service-orders", "/api/v2/service-orders/*").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.PATCH, "/api/v2/parts/*/quantity").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers("/api/v2/service-order-items/**", "/api/v2/service-order-items", "/api/v2/service-order-tasks/**", "/api/v2/service-order-tasks", "/api/v2/service-order/*/task").hasAnyRole("MANAGER", "TECHNICAL")
-                        .requestMatchers("/api/v2/auth/login", "/api/v2/users/password-reset/request-verification-codes", "api/v2/service-orders/identification-code/*").permitAll()
+                        .requestMatchers("/api/v2/auth/login", "/api/v2/users/password-reset/request-verification-codes", "/api/v2/service-orders/identification-code/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex ->

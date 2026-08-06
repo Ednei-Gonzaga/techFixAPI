@@ -12,7 +12,7 @@ public record UserCreateDTO(
         String name,
 
         @NotBlank
-        @CPF(message = "CPF inválido ou formato incorreto.")
+        //@CPF(message = "CPF inválido ou formato incorreto.")
         String cpf,
 
         @NotBlank

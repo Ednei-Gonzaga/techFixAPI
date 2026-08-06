@@ -8,7 +8,7 @@ public record ClientCreateDTO(
         String name,
 
         @NotBlank
-        @CPF
+        //@CPF
         String cpf,
 
         String phone,

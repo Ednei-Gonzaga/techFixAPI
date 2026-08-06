@@ -23,6 +23,7 @@ public class TokenService {
             return JWT.create()
                     .withIssuer("techFix-api")
                     .withSubject(user.getId().toString())
+                    .withExpiresAt(Instant.now().plus(8, ChronoUnit.HOURS))
                     .sign(algorithm);
         } catch (JWTCreationException exception){
             throw new JWTCreationException("Houve um erro ao gerar token jwt", exception);

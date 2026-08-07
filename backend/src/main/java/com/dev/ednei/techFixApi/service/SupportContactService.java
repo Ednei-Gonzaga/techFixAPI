@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.service;
 import com.dev.ednei.techFixApi.DTOS.supportContacts.SupportContactCreateDTO;
 import com.dev.ednei.techFixApi.DTOS.supportContacts.SupportContactFullDTO;
 import com.dev.ednei.techFixApi.DTOS.supportContacts.SupportContactUpdateDTO;
+import com.dev.ednei.techFixApi.infra.exceptions.errors.ConflictDataException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.EntityNotFoundException;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.InvalidParameterException;
 import com.dev.ednei.techFixApi.model.SupportContact;
@@ -36,7 +37,7 @@ public class SupportContactService {
         }
 
         if(supportContactRepository.existsByContact(contactDto.contact())){
-            throw new EntityNotFoundException("Já existe contato com valor informado '" + contactDto.contact() + "'");
+            throw new ConflictDataException("Já existe contato com valor informado '" + contactDto.contact() + "'");
         }
 
         SupportContact supportContact = new SupportContact(contactDto);
@@ -54,7 +55,7 @@ public class SupportContactService {
         }
 
         if((supportContactRepository.existsByContact(contactDto.contact())) && !contactDto.contact().equalsIgnoreCase(supportContact.getContact())){
-            throw new EntityNotFoundException("Já existe contato com valor informado '" + contactDto.contact() + "'");
+            throw new ConflictDataException("Já existe contato com valor informado '" + contactDto.contact() + "'");
         }
 
 

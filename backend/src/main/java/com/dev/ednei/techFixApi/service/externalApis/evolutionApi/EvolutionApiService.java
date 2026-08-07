@@ -78,7 +78,9 @@ public class EvolutionApiService {
             throw new EntityNotFoundException("Não foi encontrado nenhuma instância para Bot de Notificações. Acesse a rota de conexão e depois tente novamente.");
         }
 
-        return objectMapper.readValue(response.body().toString(), InstanceDetailResponse.class);
+        InstanceDetailResponse[] details = objectMapper.readValue(response.body().toString(), InstanceDetailResponse[].class);
+
+        return details[0];
     }
 
 

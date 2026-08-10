@@ -39,8 +39,6 @@ public class SupportContactController {
         return ResponseEntity.noContent().build();
     }
 
-    @Autowired
-    private SupportContactRepository  supportContactRepository;
 
     @GetMapping("/support-contact")
     public ResponseEntity<List<SupportContactFullDTO>> findAllSupportContacts() {

@@ -5,6 +5,7 @@ import com.dev.ednei.techFixApi.DTOS.serviceOrderHistory.ServiceOrderHistoryCrea
 import com.dev.ednei.techFixApi.model.enums.ServiceOrderStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @Table(name = "service_order_history")
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 public class ServiceOrderHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

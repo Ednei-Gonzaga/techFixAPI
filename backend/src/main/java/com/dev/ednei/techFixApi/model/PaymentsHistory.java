@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.model;
 import com.dev.ednei.techFixApi.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "payments_history")
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 public class PaymentsHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

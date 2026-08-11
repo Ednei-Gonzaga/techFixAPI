@@ -38,14 +38,10 @@ public class ServiceOrderHistoryService {
 
     //Metodos privados
     private void checkExistServiceOrder(Long serviceOrderId) {
-        var existServiceOrder = repository.existsById(serviceOrderId);
+        var existServiceOrder = serviceOrderRepository.existsById(serviceOrderId);
 
         if(!existServiceOrder) {
             throw new EntityNotFoundException("Não foi encontrado nenhuma Ordem de Serviço com ID: " + serviceOrderId);
-        } else {
-            if(!repository.existsByServiceOrderId(serviceOrderId)) {
-                throw new EntityNotFoundException("Não foi encontrado histórico para a Ordem de Serviço com ID: " + serviceOrderId);
-            }
         }
     }
 }

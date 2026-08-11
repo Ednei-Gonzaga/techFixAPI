@@ -82,7 +82,7 @@ public class SpringSecurityConfig {
                         .requestMatchers("/api/v2/service-catalogs/**", "/api/v2/support-contact/**", "/api/v2/support-contact").hasRole("MANAGER")
                         .requestMatchers("/api/v2/service-order-tasks", "/api/v2/service-order-tasks/**").hasAnyRole("MANAGER", "TECHNICAL")
                         .requestMatchers("/api/v2/service-order-items", "/api/v2/service-order-items/**").hasAnyRole("MANAGER", "TECHNICAL")
-                        .requestMatchers("/api/v2/dashboard/metrics", "/api/v2/real-time-alerts", "/api/v2/whatsapp/**").hasRole("MANAGER")
+                        .requestMatchers("/api/v2/dashboard/metrics", "/api/v2/real-time-alerts", "/api/v2/whatsapp/**", "/api/v2/service-order/*/history/updates", "/api/v2/service-order/*/payment/history").hasRole("MANAGER")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex ->

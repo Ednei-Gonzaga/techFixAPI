@@ -43,13 +43,17 @@ public class SpringSecurityConfig {
                         .requestMatchers(
                                 "/api/v2/auth/login",
                                 "/api/v2/users/password-reset/request-verification-codes",
-                                "/api/v2/service-orders/identification-code/*"
+                                "/api/v2/service-orders/identification-code/*",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger.yaml",
+                                "/error"
                         ).permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/v2/employees/me", "/api/v2/users/me/password").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.GET, "/api/v2/employees/me").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.POST, "/api/v2/employees/search/cpf", "/api/v2/clients/cpf/search").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.GET, "/api/v2/admin/service-catalogs").hasRole("MANAGER")
-                        //.requestMatchers(HttpMethod.PATCH, ).hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.GET, "/api/v2/service-orders/*/payments").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.PUT, "/api/v2/service-orders/*/payments").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.PATCH, "/api/v2/service-orders/*/payments").hasAnyRole("MANAGER", "ATTENDANT")

@@ -1,0 +1,3530 @@
+openapi: 3.0.3
+info:
+  title: TechFixApi REST
+  version: 2.0.0
+  description: |
+    A TechFixApi é uma aplicação desenvolvida em Java e Spring Boot para gerenciar operações de assistência técnica. O sistema processa o controle de estoque de peças e o catálogo de serviços. A API gerencia o acesso de usuários através de tokens JWT e perfis de permissão. As respostas de erro seguem um padrão técnico, e os dados são entregues com paginação. Este é um projeto pessoal criado para aplicar e testar meus conhecimentos em desenvolvimento backend
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: "http://localhost:8080"
+    description: "Servidor Teste"
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v2/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Realizar a autenticação do usuário
+      description: |
+        Endpoint responsável por autenticar um usuário no sistema. Valida se é o primeiro acesso do usuário (obrigatoriedade de alterar a senha). 
+        Se for o primeiro acesso, retorna um token temporário (válido por 10 minutos) para a alteração de senha.
+      security: [] 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationRequest'
+      responses:
+        '200':
+          description: Autenticação bem-sucedida. Retorna o Token JWT de acesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Token:
+                    type: string
+                    description: Token JWT que concede acesso aos endpoints protegidos da API.
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos (falhas de validação).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          description: Credenciais de login ou senha inválidas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Primeiro acesso detectado. O usuário deve alterar sua senha obrigatoriamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Alteração de senha obrigatória no primeiro acesso."
+                  tempToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.tempTokenForPasswordChange..."
+
+  /api/v2/users:
+    post:
+      tags:
+        - Users
+      summary: Criar um novo usuário / funcionário
+      description: Registra um novo usuário. Gera uma senha temporária padronizada e envia um e-mail com as credencias de login. O username por padrão e o CPF cadastrado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateDTO'
+      responses:
+        '201':
+          description: Usuário cadastrado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResumeDTO'
+        '400':
+          description: "Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos (falhas de validação, ex: e-mail inválido, dados em branco)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem  permissão para acessar rota.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: Conflito de dados. Cadastro com CPF ou Email já existente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/users/password-reset/request-verification-codes:
+    post:
+      tags:
+        - Users
+      summary: Solicitar código de verificação para reset de senha
+      description: Endpoint público para gerar um código de verificação seguro enviado via e-mail, para alteração de senha.
+      security: [] 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailResetPassword'
+      responses:
+        '201':
+          description: Código gerado e e-mail enviado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationCodesResumeDTO'
+        '400':
+          description: "Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos (ex: e-mail em branco ou fora do formato padrão)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Usuário não encontrado com o e-mail informado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/users/reset-password:
+    put:
+      tags:
+        - Users
+      summary: Alterar senha usando código de verificação (Não Logado)
+      description: Altera a senha do usuário exigindo validação por um código de verificação.
+      security: [] 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestResetPasswordNotLogged'
+      responses:
+        '200':
+          description: Senha alterada com sucesso.
+          content: 
+            application/json: 
+              example: ok
+        '400':
+          description: "Corpo da requisição mal formatado, ausente ou erro de validação nos requisitos de campos (ex: força da nova senha ou e-mail inválido)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Código de verificação incorreto ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Nenhum usuário encontrado com o e-mail informado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/users/me/password:
+    put:
+      tags:
+        - Users
+      summary: Alterar própria senha (Usuário Logado)
+      description: Permite que o usuário autenticado altere sua própria senha de acesso com a confirmação de sua senha atual.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestResetPasswordUserLogged'
+      responses:
+        '200':
+          description: Senha atualizada com sucesso.
+          content:
+            application/json:
+              example: ok
+        '400':
+          description: "Corpo da requisição mal formatado, ausente ou requisitos de campos inválidos (ex: nova senha fora do padrão exigido)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: A senha atual fornecida está incorreta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/users/{id}:
+    delete:
+      tags:
+        - Users
+      summary: Desativar um usuário do sistema
+      description: Desativa a conta de um usuário de forma lógica.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Usuário desativado com sucesso.
+          content:
+            application/json:
+              example: no content
+        '403':
+          description: Acesso negado por falta de privilégios de perfil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Usuário não encontrado no sistema.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/employees:
+    get:
+      tags:
+        - Employees
+      summary: Listar todos os funcionários
+      description: Retorna uma listagem paginada de todos os funcionários cadastrados, filtrável por status e nome.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Listagem de funcionários recuperada com sucesso.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EmployeeFullDTO'
+                  - $ref: '#/components/schemas/PageMetadata'
+        '403':
+          description: Acesso negado por falta de privilégios de perfil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/employees/{id}:
+    get:
+      tags:
+        - Employees
+      summary: Buscar funcionário por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Funcionário localizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeFullDTO'
+        '403':
+          description: Acesso negado por falta de permissões.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Funcionário não localizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    put:
+      tags:
+        - Employees
+      summary: Atualizar cadastro de funcionário (perfil MANGER)
+      description: Atualiza as informações de cadastro de um funcionário por seu ID. Modifica o login se o CPF for alterado.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeManagerUpdateDTO'
+      responses:
+        '200':
+          description: Cadastro atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeResumeDTO'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos (falhas de validação).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado. Ação exclusiva para perfil Gestor/Admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Funcionário não localizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: O E-mail ou CPF novos já estão em uso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/employees/me:
+    get:
+      tags:
+        - Employees
+      summary: Buscar dados do funcionário logado
+      responses:
+        '200':
+          description: Dados do funcionário logado retornados com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeResumeDTO'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Perfil não localizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    put:
+      tags:
+        - Employees
+      summary: Atualizar próprios dados cadastrais (Perfil do Usuário)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeProfileUpdateDTO'
+      responses:
+        '200':
+          description: Perfil pessoal atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeResumeDTO'
+        '400':
+          description: "Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos (falhas de validação, ex: e-mail em formato incorreto)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: O novo e-mail informado já pertence a outro usuário.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/employees/search/cpf:
+    post:
+      tags:
+        - Employees
+      summary: Buscar funcionário por CPF
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequestCpf'
+      responses:
+        '200':
+          description: Busca por CPF realizada com sucesso.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EmployeeResumeDTO'
+                  - $ref: '#/components/schemas/PageMetadata'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou CPF com campos inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/parts:
+    post:
+      tags:
+        - Parts
+      summary: Cadastrar nova peça no estoque
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartCreateDTO'
+      responses:
+        '201':
+          description: Peça cadastrada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartFullDTO'
+        '400':
+          description: "Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos (ex: dados obrigatórios em branco ou com tipo de dado incorreto)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado. Ação restrita por nível de usuário.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    get:
+      tags:
+        - Parts
+      summary: Listar todas as peças (Paginado)
+      parameters:
+        - name: nameOrCode
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Listagem de peças recuperada com sucesso.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PartFullDTO'
+                  - $ref: '#/components/schemas/PageMetadata'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/parts/{id}:
+    get:
+      tags:
+        - Parts
+      summary: Buscar peça por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Peça localizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartFullDTO'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Peça não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    put:
+      tags:
+        - Parts
+      summary: Atualizar cadastro completo da peça
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartUpdateDTO'
+      responses:
+        '200':
+          description: Dados atualizados com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartFullDTO'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Peça não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    delete:
+      tags:
+        - Parts
+      summary: Desativar peça (Inativar logicamente)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Peça inativada com sucesso.
+          content:
+            application/json:
+              example: no content
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Peça não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/parts/{id}/quantity:
+    patch:
+      tags:
+        - Parts
+      summary: Registrar saída/baixa de quantidade no estoque
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestRecordQuantityStock'
+      responses:
+        '200':
+          description: Estoque abatido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartFullDTO'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos numéricos inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Peça não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: A quantidade solicitada excede o estoque disponível.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/parts/{id}/enable:
+    patch:
+      tags:
+        - Parts
+      summary: Reativar peça no sistema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Peça reativada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartFullDTO'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Peça não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-catalogs:
+    post:
+      tags:
+        - Service Catalogs
+      summary: Cadastrar novo serviço no catálogo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCatalogCreatedDTO'
+      responses:
+        '201':
+          description: Serviço cadastrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCatalogFullDTO'
+        '400':
+          description: "Corpo mal formatado, dados obrigatórios ausentes ou valores inválidos (ex: o preço de custo não pode ser menor que zero)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    get:
+      tags:
+        - Service Catalogs
+      summary: Listar serviços ativos do catálogo
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Listagem recuperada com sucesso.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ServiceCatalogFullDTO'
+                  - $ref: '#/components/schemas/PageMetadata'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-catalogs/{id}:
+    put:
+      tags:
+        - Service Catalogs
+      summary: Atualizar serviço no catálogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCatalogUpdateDTO'
+      responses:
+        '200':
+          description: Serviço atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCatalogFullDTO'
+        '400':
+          description: "Corpo mal formatado ou valores inválidos (ex: o preço de custo não pode ser negativo)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Nenhum serviço encontrado com o ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    delete:
+      tags:
+        - Service Catalogs
+      summary: Desativar serviço do catálogo (Exclusão lógica)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Serviço inativado com sucesso.
+          content:
+            application/json:
+              example: ok
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Serviço não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-catalogs/{id}/enable:
+    patch:
+      tags:
+        - Service Catalogs
+      summary: Reativar serviço no catálogo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Serviço reativado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCatalogFullDTO'
+        '403':
+          description: Acesso negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Serviço não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/admin/service-catalogs:
+    get:
+      tags:
+        - Service Catalogs
+      summary: Listar todos os serviços (Painel Administrativo)
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Listagem gerencial de serviços recuperada.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ServiceCatalogFullDTO'
+                  - $ref: '#/components/schemas/PageMetadata'
+        '403':
+          description: Acesso negado. Apenas para gestores/admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  
+  /api/v2/clients:
+    post:
+      tags: 
+       - Clients
+      summary: Cadastrar novo cliente
+      requestBody: 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientCreateDTO'
+      responses: 
+        '201':
+          description: Cadastro realizado com sucesso.
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ClientFullDTO'
+        '409': 
+          description: Conflito. Cliente já cadastrado com CPF informado.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Acesso negado. Apenas usuários com permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+          description: "Corpo mal formatado ou valores vazios ou inválidos."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    get:
+      summary: Listar todos os clientes
+      description: Endpoint lista todos os clientes e retorna em paginação. Sendo possível filtrar por Nome do cliente se necéssario.
+      tags:
+        - Clients
+      parameters: 
+        - name: name 
+          in: query
+          schema:
+            type: string
+          description: Digite o nome do cliente
+        - name: size
+          in: query
+          schema:
+            type: number
+          description: Quantidade de elementos por página
+        - name: page 
+          in: query 
+          schema:
+            type: string 
+          description: Número da página (começa por 0)
+      responses:
+        '200': 
+          description: Busca realizada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageClientFull'
+        '403':
+          description: Acesso negado. Apenas usuários com permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+          description: "Corpo mal formatado ou valores vazios ou inválidos."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/clients/{id}:
+    parameters: 
+      - name: id 
+        in: path 
+        schema:
+          type: number 
+        required: true
+    put:
+      tags:
+        - Clients
+      summary: Atualizar cadastro do Cliente
+      requestBody: 
+        content:
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/ClientUpdateDTO'
+      responses: 
+        '200':
+          description: Cadastro atualizado com sucesso.
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ClientFullDTO'
+        '403':
+          description: Acesso negado. Apenas usuários com permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+          description: "Corpo mal formatado ou valores vazios ou inválidos."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409': 
+          description: Conflito. Cliente já cadastrado com CPF informado.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Cliente com ID informado não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    get:
+        tags:
+          - Clients
+        summary: Busca clientes pelo ID 
+        responses:
+          '200':
+            description: Busca realizada com sucesso.
+            content:
+              application/json: 
+                schema:
+                  $ref: '#/components/schemas/ClientFullDTO'
+          '404':
+            description: Cliente com ID informado não encontrado.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'  
+          '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/clients/cpf/search:
+     post:
+      tags:
+        - Clients
+      summary: Busca Cliente pelo CPF
+      description: Endpoint realiza consulta com segurança (evitar que o CPF vaze) por CPF. Por ser uma consulta do tipo 'ILIKE' retorna uma lista de clientes com paginação se encontrar qualquer um com a sequência informada.
+      requestBody: 
+        content: 
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/ClientCpfRequest'
+      responses:
+        '200':
+            description: Busca realizada com sucesso.
+            content:
+              application/json: 
+                schema:
+                  $ref: '#/components/schemas/PageClientFull'
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'  
+        '400':
+          description: "Corpo mal formatado ou valores vazios ou inválidos."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  /api/v2/service-requests:
+    post:
+      tags:
+        - Service Requests
+      summary: Cadastra nova Solicitação de Serviço 
+      description: Endpoint cria uma nova Solicitação de Serviço vinculada a um cliente. Ao finalizar cadastro     automaticamente é criado uma ServiceOrder (Ordem de Serviço).
+      requestBody: 
+        content:
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/ServiceRequestCreateDTO'
+      responses:
+        '201':
+          description: Solicitação de Serviço criada com sucesso
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ServiceRequestFullDTO'
+        '400':
+          description: "Corpo mal formatado ou valores vazios ou inválidos."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'  
+        '404':
+            description: Cliente com ID informado não encontrado.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail' 
+    get:
+      parameters: 
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: "Número da página (Começa do 0)"
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Número de elementos por página
+      summary: Busca todas Solicitações de Serviço
+      tags:
+        - Service Requests
+      responses:
+        '200':
+          description: Busca realizada com sucesso.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/PageServiceRequestsFull'
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+  
+  /api/v2/service-requests/clients/{id}:
+    parameters: 
+      - name: id
+        in: path  
+        schema:
+          type: number
+        required: true
+        description: ID do cliente
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: "Número da página (Começa do 0)"
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Número de elementos por página
+    get:
+        summary: Busca Solicitações de Serviço pelo ID do cliente 
+        tags:
+          - Service Requests
+        responses:
+          '200':
+            description: Busca realizada com sucesso.
+            content: 
+              application/json: 
+                schema: 
+                  $ref: '#/components/schemas/PageServiceRequestsFull'
+          '404':
+            description: Cliente com ID informado não encontrado.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'       
+          '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'  
+
+  /api/v2/service-requests/{id}:
+    parameters: 
+      - name: id
+        in: path  
+        schema:
+          type: number
+        required: true
+        description: ID Solicitação de Serviço
+    put: 
+      tags:
+        - Service Requests
+      summary: Atualiza informações da Solicitação de Serviço
+      requestBody: 
+        content: 
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/ServiceRequestUpdateDTO'
+      responses:
+        '200':
+          description: Informações Atualizadas com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequestFullDTO'
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail' 
+        '404':
+            description: Solicitação de Serviço com ID informado ou Cliente não encontrada.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail' 
+        '400':
+            description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail' 
+    get:
+      tags:
+        - Service Requests
+      summary: Busca Solicitação de Serviço pelo ID.
+      responses:
+        '200':
+          description: Busca realizada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequestFullDTO'
+        '404':
+            description: Solicitação de Serviço com ID informado não encontrada.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'  
+  
+  /api/v2/service-orders/{id}:
+    parameters: 
+      - name: id
+        in: path  
+        schema:
+          type: number
+        required: true
+        description: ID Solicitação de Serviço
+    get:
+      tags: 
+        - Service Orders
+      summary: Busca detalhes da Ordem Serviço pelo ID
+      description: Endpoint realiza consulta de Ordem Serviço pelo ID.Traz informações do Cliente e da Solicitação de Serviço com datas e status para melhor acompanhamento.
+      responses:
+        '200':
+          description: Busca realizada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOrderDetailDTO'
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '404':
+            description: Ordem de Serviço não encontrada com ID informado.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+    
+    put: 
+      tags:
+        - Service Orders
+      summary: Atualiza Ordem de Serviço
+      description: |
+       Endpoint atualiza Ordem de Serviço permitindo atualizar status e atribuir técnico a OS.
+       
+       ### Regras de Atribuição de Técnico:
+       
+       * Para que uma Ordem de Serviço saia de 'PEDING' é obrigatório atribuir um Técnico (Usuário com role TECHNICIAN) Responsável a ela.
+       * Uma vez atribuido não será possível trocar Técnico responsável, somente um Usuário com permições do role 'MANAGER'.
+      
+       ### Regras para atualização de status por Perfil:
+        * **Técnico (TECHNICAL)**: Tem autonomia para atulizar todos status exceto ENTREGUE (DELIVERED) e CANCELADO (CANCELED).
+        * **Atendente (ATTENDANT):** Tem permissão para atualizar para ENTREGUE ('DELIVERED') se o status já estiver como COMPLETADO (COMPLETED) e também para CANCELADO (CANCELED) caso o status ainda esteja como PEDENTE (PEDING).
+        * **GERENTE (MANAGER):** Possui privilégios totais sobre a alterações de status. Mas não pode atualizar se essa Ordem de Serviço j constar comó ENTREGUE (DELIVERED) e com pagamento finalizado.
+
+        * **Completado (COMPLETED):** Ao completar uma Ordem de Serviço automaticamente é gerado um Pagamento já somando todos os gastos e mão de obra realizada.
+
+        ### Validação antes de alterações:
+        * **Tarefas e Pagamentos:** O sistema impede a conclusão da OS se houver tarefas pendentes e bloqueia a entrega ao cliente caso as validações de pagamento não sejam atendidas.
+        * **Histórico Automático:** Qualquer alteração de status gera um registro de auditoria imutável no histórico da Ordem de Serviço.
+        * **Rotina Financeira:** O endpoint aciona automaticamente o processamento e atualização de fluxos de pagamento atrelados à OS.
+      requestBody: 
+        content: 
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/ServiceOrderUpdateDTO'
+      responses: 
+        '200':
+          description: Ordem de Serviço atualizada com sucesso.
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ServiceOrderFullDTO'
+        '404':
+            description: Ordem de Serviço não encontrada com ID informado.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '400':
+            description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail' 
+        '422':
+            description: Os dados estão corretos, mas por Regras de Negócios da API a ação não foi permitida.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'   
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-orders/identification-code/{code}:
+    parameters: 
+      - name: code
+        in: path
+        schema: 
+          type: string 
+        required: true
+    get:
+      security: []  
+      tags:
+      - Service Orders 
+      summary: Busca Ordem de Serviço pelo Código rastreio
+      description: Endpoint pública que busca detalhes da Ordem de Serviço pelo Codigo de Rastreio da OS.
+      responses:
+        '200': 
+           description: Ordem de Serviço encontrada e retornada com sucesso.
+           content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ServiceOrderDetailDTO'
+        '404':
+          description: Não foi  encontrado Ordem de Serviço com Codigo informado.
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-orders:
+     get: 
+       parameters: 
+         - name: status 
+           in: query
+           schema:
+            type: string 
+           description: Status da Ordem Serviço 
+         - name: category
+           in: query 
+           schema:
+            type: string 
+           description: Categoria de Dispisitivo
+         - name: page 
+           in: query
+           schema:
+            type: number 
+           description: Número da página (primeira começa em 0)
+         - name: size 
+           in: query 
+           schema:
+            type: number 
+           description: Número de elementos por página
+       summary: Busca todas Ordem de serviços
+       description: |
+        Endpoint busca todos as Ordem de Serviço retornando em Paginação, sendo possível filtrar por status e categoria. Por padrão se não for passado nenhum parametro na query, ela retorna somentes as OS que ainda estão em andamento pela ordem que foi criada. Caso seja filtrado por algum status que indica que a OS já foi finalizada, será retornado todas começando pelas recém finalizadas. O mesmo vale para Categoria, por padrão retorna todas sem nenhum filtro.
+       tags:
+        - Service Orders
+       responses:
+        '200': 
+          description: Busca realizada com sucesso.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/PageServiceOrderDetailDTO'
+        '400':
+            description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail' 
+        '403':
+            description: Acesso negado. Apenas usuários com permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-orders/my-tasks:
+    get:
+      parameters: 
+        - name: status 
+          in: query
+          schema:
+           type: string 
+          description: Status da Ordem Serviço 
+        - name: category
+          in: query 
+          schema:
+           type: string 
+          description: Categoria de Dispisitivo
+      tags:
+        - Service Orders
+      summary: Busca as Ordens de Serviço do próprio Técnico
+      description: Busca as Ordens de Serviço atribuídas ao próprio usuário autenticado, retornando exclusivamente as tarefas do Técnico solicitante. É possível filtrar os resultados por Categoria e Status. Por padrão, se nenhum filtro for aplicado, retorna apenas as OS em andamento, ordenadas pela prioridade de finalização. Caso a busca seja filtrada por status que indiquem conclusão, os resultados serão ordenados das OS mais recentes para as mais antigas. Esta rota é de acesso exclusivo para usuários com o perfil TECHNICIAN.
+      responses:
+       '200': 
+          description: Busca realizada com sucesso.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/PageServiceOrderDetailDTO'   
+       '403':
+          description: Acesso negado. Apenas usuários com permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+       '400':
+            description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+  
+  /api/v2/service-order-items:
+     post:
+       summary: Cadastra um novo Item (Peça) a Ordem de Serviço
+       description: Cadastra as peças utilizadas no conserto dos aparelhos em uma Ordem de Serviço. O registro só é permitido em Ordens de Serviço que ainda não foram finalizadas e que estejam atribuídas ao próprio Técnico que está realizando a requisição.
+       tags: 
+         - Service Order Items
+       requestBody: 
+         content: 
+           application/json: 
+             schema:
+              $ref: '#/components/schemas/ServiceOrderItemCreateDTO'
+       responses:
+        '201':
+          description: Item (Peça) cadastrado a Ordem de Serviço com sucesso.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ServiceOrderItemFullDTO'
+        '422':
+          description: Ordem de Serviço já pode ter sido finalizada, item (peça) informada pode está desativada ou quantidade informada é menor ou igual a ZERO ou Maior do que a disponível.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description:  O Item (Peça) já existe para Ordem de Serviço informada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão ou a Ordem de Serviço não pertence ao usuário que fez a requisição
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+            description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail' 
+        '404':
+          description: Peça ou Ordem de Serviço não foi encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    
+  /api/v2/service-order-items/{id}/quantity:
+    parameters: 
+      - name: id 
+        in: path
+        schema:
+          type: number 
+        description: ID do Item Ordem Serviço 
+        required: true
+    put:
+      tags:
+        - Service Order Items 
+      summary: Atualiza a quantidade de Itens (Peças) na Ordem Serviço
+      description:  Atualiza a quantidade de item (peça) utilizadas no conserto dos aparelhos em uma Ordem de Serviço. A atualização só é permitido em Ordens de Serviço que ainda não foram finalizadas e que estejam atribuídas ao próprio Técnico que está realizando a requisição.
+      requestBody: 
+        content:
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/RequestQuantityServiceOrderItem'
+      responses:
+        '200':
+          description: Item de Ordem Serviço autalizada.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ServiceOrderItemFullDTO'
+        '400':
+            description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão ou a Ordem de Serviço não pertence ao usuário que fez a requisição
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: Ordem de Serviço já pode ter sido finalizada ou quantidade informada é menor ou igual a ZERO ou Maior do que a disponível.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Item (peça) de Ordem Serviço não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-order-items/{id}:
+     parameters: 
+      - name: id 
+        in: path
+        schema:
+          type: number 
+        description: ID do Item de Ordem Serviço 
+        required: true
+     delete:
+      tags:
+        - Service Order Items
+      summary: Deleta Item de Ordem Serviço 
+      description: Deleta permanentemente o item (peça) utilizada no conserto do aparelho em uma Ordem de Serviço. A exclusão só é permitido em Ordens de Serviço que ainda não foram finalizadas e que estejam atribuídas ao próprio Técnico que está realizando a requisição.
+      responses:
+        '204':
+          description: Item de Ordem Serviço deletado.
+          content: 
+            application/json:
+              example: no content
+        '403':
+          description: Usuário sem permissão ou a Ordem de Serviço não pertence ao usuário que fez a requisição
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: Ordem de Serviço já pode ter sido finalizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Item (peça) de Ordem Serviço não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-order-items/service-order/{id}:
+    parameters: 
+      - name: id 
+        in: path
+        schema:
+          type: number 
+        description: ID da Ordem Serviço 
+        required: true
+    get:
+      summary: Busca lista de Items (Paças) usadas por Ordem Serviço 
+      tags:
+        - Service Order Items 
+      responses:
+        '200':
+          description: Busca realizada com sucesso.
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ListServiceOrderItemFull'
+        '404':
+          description: Ordem Serviço não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+            description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+                
+  /api/v2/service-order-tasks:
+    post:
+      tags:
+        - Service Order Tasks
+      summary: Cadastra novo tarefa (Catálogo Serviço) a uma Ordem Serviço
+      description: Cadastra tipo de tarefa (Catálogo Serviço) feita no conserto do aparelho em uma Ordem de Serviço. O cadastro só é permitido em Ordens de Serviço que ainda não foram finalizadas e que estejam atribuídas ao próprio Técnico que está realizando a requisição.
+      requestBody: 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceOrderTaskCreateDTO'
+      responses:
+        '201':
+          description: Tarefa (Catálogo Serviço) adicionada a Ordem Serviço com sucesso.
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ServiceOrderTaskFullDTO'
+        '422':
+          description: Catálogo de Serviço está desativada, Ordem  Serviço não possui um Tecnico responsavel ou não pertence ao Técnico que fez a requisição ou OS já foi finalizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Ordem Serviço ou Catálogo de Serviço não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-order/{id}/task:
+      parameters: 
+      - name: id 
+        in: path
+        schema:
+          type: number 
+        description: ID da Ordem Serviço 
+        required: true
+      get:
+        tags:
+          - Service Order Tasks
+        summary: Busca todas as Tarefas (Caálogo de Serviças) feitos por Ordem Serviço
+        description: Busca todos os Serviços feitos no concerto do aparelho de uma Ordem Serviço.
+        responses:
+          '200':
+            description: Busca realizada com sucesso.
+            content:
+              application/json: 
+                schema:
+                  $ref: '#/components/schemas/ListServiceOrderTaskFull'
+          '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+          '404':
+            description: Ordem Serviço não encontrada.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+          
+  /api/v2/service-order-tasks/{id}:
+      parameters: 
+      - name: id 
+        in: path
+        schema:
+          type: number 
+        description: ID da Ordem Serviço 
+        required: true
+      delete:
+        tags:
+        - Service Order Tasks
+        summary: Deleta tarefa (Catálogo Serviço) de uma Ordem Serviço
+        description: Exclui permanentemente tarefa (Catálogo Serviço) atribuido a uma Ordem Serviço. A exclusão só é permitido em Ordens de Serviço que ainda não foram finalizadas e que estejam atribuídas ao próprio Técnico que está realizando a requisição.
+        responses:
+          '204':
+            description: Tarefa (Catálogo Serviço) deletada com sucesso.
+            content: 
+              application/json: 
+                schema: 
+                  example: no content
+          '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+          '404':
+            description: Ordem Serviço não encontrada.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+          '422':
+            description: Ordem de serviço não pertence ao Usuário que fez requisição
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+  
+  /api/v2/service-orders/{id}/payments:
+    parameters: 
+      - name: id 
+        in: path
+        schema:
+          type: number 
+        description: ID da Ordem Serviço 
+        required: true
+    put: 
+      tags:
+        - Payments
+      summary: Atualiza Método e Desconto em Pagamentos
+      description: Faz atualização do Método de Pagamento e adiciona Desconto se necéssario. Só é possível fazer essas alterações se o Pagamento não estiver finalizado (PAID ou CANCELED). Caso a OS seja cancelada o Pagamento referente a ela recebe também  automáticamente o status 'CANCELED'. Todas as alterações são salvas no Historico de Pagamentos.  
+      requestBody: 
+        content: 
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/PaymentsUpdateDTO'
+      responses:
+        '200':
+          description: Dados atualizados com sucesso.
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/PaymentsFullDTO'
+        '404':
+          description: Não foi encontrado Pagamento atribuido para Ordem Serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: Pagamento já foi finalizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+    get:
+      summary: Busca detalhes do Pagamento pelo ID Ordem Serviço
+      tags:
+        - Payments
+      responses:
+        '200':
+          description: Busca realizada com sucesso.
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/PaymentsFullDTO'
+        '404':
+          description: Não foi encontrado Pagamento atribuido para Ordem Serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+       
+  /api/v2/service-orders/{id}/payments/status:
+    parameters: 
+      - name: id 
+        in: path
+        schema:
+          type: number 
+        description: ID da Ordem Serviço 
+        required: true
+    patch:
+      summary: Atualiza status de Pagamentos
+      requestBody: 
+        content:
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/PaymentsRequestStatus'
+      tags:
+        - Payments
+      responses:
+        '200':
+          description: Status atualizado com sucesso.
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/PaymentsFullDTO'
+        '404':
+          description: Não foi encontrado Pagamento atribuido para Ordem Serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: Pagamento já foi finalizado ou Metodo de pagamento não preenchido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+    
+  /api/v2/service-order/{id}/payment/history:
+    parameters: 
+      - name: id
+        in: path 
+        schema:
+          type: number 
+        required: true 
+    get: 
+      tags:
+        - History Service Order
+      summary: Busca histórico de atualizações de Pagamento por ID da Ordem Serviço 
+      responses:
+        '200': 
+          description: Busca realizada com sucesso
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/PagePaymentsHistoryFull' 
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Não foi encontrado Ordem de Serviço informado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          description: Token não informado ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/service-order/{id}/history/updates:
+    parameters: 
+      - name: id
+        in: path 
+        schema:
+          type: number 
+        required: true 
+    get: 
+      tags:
+        - History Service Order
+      summary: Busca histórico de atualizações da Ordem Serviço pelo ID da OS
+      responses:
+        '200': 
+          description: Busca realizada com sucesso
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/PageServiceOrderHistoryFull' 
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Não foi encontrado Ordem de Serviço informado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          description: Token não informado ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'     
+  
+  /api/v2/support-contact:
+    post:
+      tags:
+        - Support Contact
+      summary: Adiciona um novo contato de suporte
+      description: endpoint cria um novo contato de suporte, sendo possivel adicionar contato do tipo EMAIL, WHATSAPP, PHONE. Essa rota é acessivel somente ao usúario do tipo MANAGER.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportContactCreateDTO'
+      responses:
+        '201':
+          description: Contato adicionado com sucesso.
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportContactFullDTO'
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: Contato já existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          description: Token não informado ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    
+    get:
+      summary: Lista todos os contatos
+      tags:
+        - Support Contact
+      description: Somente usúario com role MANAGER pode acessar esse endpont 
+      responses:
+        '200':
+          description: Lista retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupportContactFullDTO'
+        '401':
+          description: Token não informado ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+      
+  /api/v2/support-contact/{id}:
+    parameters: 
+      - name: id
+        in: path
+        schema:
+          type: number 
+        required: true 
+    put:
+      tags:
+        - Support Contact
+      summary: Atualiza dados de contato
+      description: Somente usúarios do tipo MANAGER
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportContactUpdateDTO'
+      responses:
+        '200':
+          description: Contato atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupportContactFullDTO'
+        '401':
+          description: Token não informado ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: Contato informado já existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '400':
+          description: Corpo da requisição mal formatado, ausente ou contendo campos com valores inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Contato não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    
+    delete:
+      summary: Deleta contato pelo ID
+      tags:
+        - Support Contact
+      description: Somente usúario com role MANAGER pode acessar esse endpont 
+      responses:
+        '204':
+          description: Contato deletado com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupportContactFullDTO'
+        '401':
+          description: Token não informado ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '403':
+          description: Usuário sem permissão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+
+  /api/v2/dashboard/metrics:
+     get:
+      tags: 
+        - Analytics
+      summary: Busca dashboard da assistência técnica
+      description: Retorna os dados e indicadores para o dashboard da assistência técnica, permitindo a filtragem por um período específico. Por padrão, se nenhum intervalo for informado, a busca considera desde o primeiro dia do mês vigente até a data atual. Caso seja fornecida apenas a data de início, o filtro se estenderá dessa data até o dia atual. Se apenas a data final for especificada, o sistema retornará os dados compreendidos entre a data informada e os 60 dias que a antecedem. Somente usuário do tipo 'MANAGER' pode realizar essa requisição.
+      parameters: 
+        - name: start 
+          in: query
+          schema:
+            type: string 
+            format: date
+          description: Data de início (2026-10-20)
+        - name: end 
+          in: query
+          schema:
+            type: string 
+            format: date
+          description: Data final (2026-10-01)
+      responses:
+        '200':
+          description: Busca realizada com sucesso.
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/DashboardMetricsDTO'
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: A data de início não pode ser posterior à data de fim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  
+  /api/v2/real-time-alerts:
+    get:
+      tags: 
+        - Analytics
+      summary: Retorna alertas de estoque e demanda por Tecnico
+      description: | 
+        Retorna alertas de estoque e demanda por técnico. Existe dois tipo de alerta de Estoque, RED (Vermelho) indica que o estoque está entre ZERO e UM ou abaixo do consumido mês anteriomente, YELLOW (Amarelo) indica que o estoque disponível está acima do consumido mês anteriomente, mas não tem o suficiente para mês seguinte ou pode não ser suficiente caso o cusumo do mês atual aumente. O alerta de estoque e baseado no mês anterior, se uma peça foi usada 6 unidades anteriomente o calculo será baseado nesse valor.
+        
+        * **Calculo alerta RED (Vermelho)**: o calculo e feito da seguinte forma: **(soma mês anterior) > (quantidade usados mês atual + despónivel no estoque)**, a quantidade de usados do mês atual somado com estoque disponivel é necéssario para saber qual foi o estoque real atual, dessa forma da para saber se o estoque está em risco extremo de falta.
+
+        * **Calculo alerta YELLOW (Amarelo):** o calculo e feito da seguinte forma: **(soma mês anterior) < (quantidade usados mês atual + despónivel no estoque) < (dobro dasoma mês anterior)**, ou seja, o consumo atual está maior que o mês anterior, mas ainda abaixo do dobro dele.
+      responses:
+        '200': 
+          description: Busca realizada com sucesso
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/DashboardAlertsDTO'
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+
+  /api/v2/whatsapp/instance/connect:
+    get:
+      tags:
+        - Whatsapp Connection
+      summary: Busca dados para conexão com whatsapp
+      description: | 
+        Esse endpoint cria uma nova requisição de conexão para a instância. A resposta fornece algumas alternativas para vincular o dispositivo: a imagem do QR Code em formato Base64 (pronta para renderização no frontend), o código numérico de pareamento, e a string bruta do QR Code.
+      responses:
+        '200':
+          description: Conexão criada e retornada com sucesso
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceQrcodeResponse'
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          description: Não foi enviado token ou ele está inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: Já existe um número cadastrado na conexão.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  
+  /api/v2/whatsapp/instance/detail:
+    get:
+      tags:
+        - Whatsapp Connection
+      summary: Busca detalhes da conexão com whatsapp
+      responses:
+        '200':
+          description: Detalhes buscados com sucesso
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceQrcodeResponse'
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          description: Não foi enviado token ou ele está inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  
+  /api/v2/whatsapp/instance:
+    delete:
+      tags:
+        - Whatsapp Connection
+      summary: Busca detalhes da conexão com whatsapp
+      responses:
+        '204':
+          description: Conexão excluida com sucesso.
+          content: 
+            application/json:
+              example: no content
+        '403':
+            description: Usuário sem permissão.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          description: Não foi enviado token ou ele está inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+        '404':
+          description: Conexão não existe ou não foi conectada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Insira o token JWT no formato "Bearer {token}"
+         
+  schemas:
+    PageMetadata:
+      type: object
+      description: Componente unificado contendo os metadados da paginação do Spring Boot.
+      properties:
+        totalPages:
+          type: integer
+          description: Quantidade total de páginas resultantes.
+          example: 3
+        number:
+          type: integer
+          description: Número da página atual(começa por 0)
+          example: 0
+        size:
+          type: integer
+          description: Limite máximo de elementos exibidos por página.
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          description: Quantidade total de registros em toda a base de dados.
+          example: 25
+
+    ProblemDetail:
+      type: object
+      description: Padrão oficial RFC 7807 para mapeamento e retorno de erros de API adotado pelo Spring Boot.
+      required:
+        - title
+        - status
+        - detail
+        - instance
+      properties:
+        title:
+          type: string
+          description: Um resumo curto sobre o tipo do problema.
+          example: "Bad Request"
+        status:
+          type: integer
+          description: O código de status HTTP retornado na requisição.
+          example: 400
+        detail:
+          type: string
+          description: Uma explicação específica sobre a ocorrência do problema.
+          example: "O corpo da requisição é inválido ou atributos não atendem aos critérios."
+        instance:
+          type: string
+          description: URI de referência que identifica a chamada e o endpoint que gerou o erro.
+          example: "/api/v2/users"
+        errors:
+          type: array
+          description: Um array opcional contendo o detalhamento de múltiplos erros de validação(Erro de @Valid).
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Nome do atributo enviado no corpo que falhou na validação.
+                example: "costPrice"
+              message:
+                type: string
+                description: O motivo exato da falha do atributo validado.
+                example: "O valor não pode ser menor que zero"
+    AuthenticationRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          description: "Deve ser CPF cadastrado na hora login"
+        password:
+          type: string
+          example: "Senha123"
+    UserCreateDTO:
+      type: object
+      required:
+        - role
+        - name
+        - cpf
+        - phone
+        - whatsapp
+        - email
+      properties:
+        role:
+          type: string
+          example: "MANAGER"
+        name:
+          type: string
+          example: "Ednei Gonzaga"
+        cpf:
+          type: string
+          example: "12345678901"
+        phone:
+          type: string
+          example: "61988888888"
+        whatsapp:
+          type: string
+          example: "61988888888"
+        email:
+          type: string
+          example: "ednei@techfix.com"
+
+    UserResumeDTO:
+      type: object
+      properties:
+        UserId:
+          type: integer
+          format: int64
+          example: 10
+        employeeId:
+          type: integer
+          format: int64
+          example: 5
+        role:
+          type: string
+          example: "TECHNICIAN"
+        name:
+          type: string
+          example: "Ednei Gonzaga"
+        cpf:
+          type: string
+          example: "12345678901"
+        phone:
+          type: string
+          example: "61988888888"
+        whatsapp:
+          type: string
+          example: "61988888888"
+        email:
+          type: string
+          example: "ednei@techfix.com"
+
+    RequestResetPasswordNotLogged:
+      type: object
+      required:
+        - newPassword
+        - codeVerification
+        - email
+      properties:
+        newPassword:
+          type: string
+          example: "NovaSenha123"
+        codeVerification:
+          type: string
+          example: "982713"
+        email:
+          type: string
+          example: "ednei@techfix.com"
+
+    RequestResetPasswordUserLogged:
+      type: object
+      required:
+        - newPassword
+        - currentPassword
+      properties:
+        newPassword:
+          type: string
+          example: "MinhaNovaSenha123"
+        currentPassword:
+          type: string
+          example: "MinhaSenhaAntiga123"
+
+    UserEmailResetPassword:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          example: "ednei@techfix.com"
+
+    VerificationCodesResumeDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 15
+        createdAt:
+          type: string
+          example: "2026-07-16T18:30:00"
+        status:
+          type: string
+          example: "ATIVO"
+        expiredAt:
+          type: string
+          example: "2026-07-16T18:45:00"
+        idUser:
+          type: integer
+          format: int64
+          example: 10
+
+    EmployeeFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 5
+        name:
+          type: string
+          example: "Ednei Gonzaga"
+        cpf:
+          type: string
+          example: "12345678901"
+        phone:
+          type: string
+          example: "61988888888"
+        whatsapp:
+          type: string
+          example: "61988888888"
+        email:
+          type: string
+          example: "ednei@techfix.com"
+        status:
+          type: boolean
+          example: true
+        role:
+          type: string
+          example: "MANAGER"
+        user:
+          type: integer
+          format: int64
+          example: 10
+
+    EmployeeResumeDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 5
+        name:
+          type: string
+          example: "Ednei Gonzaga"
+        cpf:
+          type: string
+          example: "12345678901"
+        phone:
+          type: string
+          example: "61988888888"
+        whatsapp:
+          type: string
+          example: "61988888888"
+        email:
+          type: string
+          example: "ednei@techfix.com"
+
+    EmployeeManagerUpdateDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Ednei Gonzaga Editado"
+        cpf:
+          type: string
+          example: "98765432100"
+        phone:
+          type: string
+          example: "61999999999"
+        whatsapp:
+          type: string
+          example: "61999999999"
+        email:
+          type: string
+          example: "novo.email@techfix.com"
+
+    EmployeeProfileUpdateDTO:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: "61977777777"
+        whatsapp:
+          type: string
+          example: "61977777777"
+        email:
+          type: string
+          example: "ednei.pessoal@gmail.com"
+
+    EmployeeRequestCpf:
+      type: object
+      required:
+        - cpf
+      properties:
+        cpf:
+          type: string
+          example: "12345678901"
+
+    PartCreateDTO:
+      type: object
+      required:
+        - name
+        - costPrice
+        - stockQuantity
+      properties:
+        name:
+          type: string
+          example: "Conector de Carga USB-C Galaxy A54"
+        costPrice:
+          type: number
+          format: double
+          example: 45.90
+        stockQuantity:
+          type: integer
+          example: 20
+
+    PartFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Conector de Carga USB-C Galaxy A54"
+        costPrice:
+          type: number
+          format: double
+          example: 45.90
+        stockQuantity:
+          type: integer
+          example: 15
+        status:
+          type: boolean
+          example: true
+        codeSku:
+          type: string
+          example: "7391"
+
+    PartUpdateDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Conector USB-C Galaxy A54 Premium"
+        costPrice:
+          type: number
+          format: double
+          example: 49.90
+        stockQuantity:
+          type: integer
+          example: 50
+
+    RequestRecordQuantityStock:
+      type: object
+      required:
+        - quantityUsed
+      properties:
+        quantityUsed:
+          type: integer
+          example: 3
+
+    ServiceCatalogCreatedDTO:
+      type: object
+      required:
+        - name
+        - costPrice
+      properties:
+        name:
+          type: string
+          example: "Formatação de Computador com Backup"
+        costPrice:
+          type: number
+          format: double
+          example: 150.00
+
+    ServiceCatalogFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 2
+        name:
+          type: string
+          example: "Formatação de Computador com Backup"
+        costPrice:
+          type: number
+          format: double
+          example: 150.00
+        status:
+          type: boolean
+          example: true
+
+    ServiceCatalogUpdateDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Formatação de Computador sem Backup"
+        costPrice:
+          type: number
+          format: double
+          example: 90.00
+    
+    ClientCreateDTO:
+      type: object 
+      properties: 
+        name:
+          type: string 
+          example: Bianca Gomes
+        cpf:
+          type: string 
+          example: 12345678901
+        phone:
+          type: string 
+          example: 61966666666
+        whatsapp:
+          type: string 
+          example: 61977777777
+      required: 
+        - name
+        - cpf
+        - phone
+        - whatsapp
+    ClientFullDTO:
+      type: object 
+      properties: 
+        id:
+          type: number
+          example: 3
+        name:
+          type: string 
+          example: Bianca Gomes
+        cpf:
+          type: string 
+          example: 12345678901
+        phone:
+          type: string 
+          example: 61966666666
+        whatsapp:
+          type: string 
+          example: 61977777777
+      required: 
+        - name
+        - cpf
+        - phone
+        - whatsapp     
+        - id   
+    ClientUpdateDTO:
+      type: object 
+      properties: 
+        name:
+          type: string 
+          example: Bianca Gomes
+        cpf:
+          type: string 
+          example: 12345678901
+        phone:
+          type: string 
+          example: 61966666666
+        whatsapp:
+          type: string 
+          example: 61977777777
+    PageClientFull:
+      type: object
+      description: Retorna um Page no padrão do Spring Boot com a lista de ClientFullDTO
+      allOf:
+        - type: object
+          properties:
+            content:
+              $ref: '#/components/schemas/ClientFullDTO'
+        - $ref: '#/components/schemas/PageMetadata'
+    
+    ClientCpfRequest:
+      type: object 
+      properties: 
+        cpf:
+          type: string 
+          example: 12345678901
+      required: 
+        - cpf
+        
+    ServiceRequestCreateDTO:
+      type: object 
+      properties: 
+        device:
+          type: string
+          description: Nome do aparelho 
+          example: Galaxy S267 Pro Ultra
+        category:
+          type: string 
+          example: SMARTPHONE
+          description: Tipo de aparelho
+        problemDescription:
+          type: string 
+          example: Aparelho apresenta flaha no display e descarrega em menos de 20 minutos
+          description: Descrição detalhada do problema 
+        client:
+          type: number 
+          example: 1
+          description: ID do cliente
+      required: 
+        - device
+        - category
+        - problemDescription
+        - client 
+
+    ServiceRequestFullDTO:
+      type: object 
+      properties: 
+        id:
+          type: number 
+          example: 2
+        device:
+          type: string
+          description: Nome do aparelho 
+          example: Galaxy S267 Pro Ultra
+        category:
+          type: string 
+          example: SMARTPHONE
+          description: Tipo de aparelho
+        problemDescription:
+          type: string 
+          example: Aparelho apresenta flaha no display e descarrega em menos de 20 minutos
+          description: Descrição detalhada do problema 
+        client:
+          type: number 
+          example: 1
+          description: ID do cliente
+      required: 
+        - device
+        - category
+        - problemDescription
+        - client
+        - id 
+    
+    ServiceRequestUpdateDTO:
+      type: object 
+      properties: 
+        device:
+          type: string
+          description: Nome do aparelho 
+          example: Galaxy S267 Pro Ultra
+        category:
+          type: string 
+          example: SMARTPHONE
+          description: Tipo de aparelho
+        problemDescription:
+          type: string 
+          example: Aparelho apresenta flaha no display e descarrega em menos de 20 minutos
+          description: Descrição detalhada do problema 
+        client:
+          type: number 
+          example: 1
+          description: ID do cliente
+    
+    PageServiceRequestsFull:
+      type: object 
+      allOf:
+        - type: object 
+          properties: 
+            content:
+              type: array 
+              items:
+                $ref: '#/components/schemas/ServiceRequestFullDTO'
+        - $ref: '#/components/schemas/PageMetadata'
+    
+    ServiceOrderDetailDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "Identificador único da ordem de serviço"
+          example: 1
+        nameClient:
+          type: string
+          description: "Nome completo do cliente"
+          example: "Roberto Silva"
+        cpfClient:
+          type: string
+          description: "CPF do cliente"
+          example: "12345678900"
+        phone:
+          type: string
+          description: "Telefone de contato principal do cliente"
+          example: "61999998888"
+        whatsapp:
+          type: string
+          description: "Número de WhatsApp do cliente para envio de atualizações"
+          example: "61999998888"
+        nameEmployee:
+          type: string
+          description: "Nome do funcionário que registrou o atendimento"
+          example: "Ednei Gonzaga"
+        device:
+          type: string
+          description: "Modelo do dispositivo registrado na ordem"
+          example: "Samsung Galaxy A54"
+        category:
+          type: string
+          description: "Categoria de classificação do dispositivo"
+          example: "SMARTPHONE"
+        problemDescription:
+          type: string
+          description: "Descrição detalhada do defeito relatado"
+          example: "Display OLED danificado, necessita de troca do painel e verificação da taxa de atualização de 120Hz."
+        identificationCode:
+          type: string
+          description: "Código alfanumérico único para rastreio rápido da OS"
+          example: "123456789"
+        status:
+          type: string
+          description: "Situação atual do andamento do serviço"
+          example: "EM_ANDAMENTO"
+        dateTimeStart:
+          type: string
+          description: "Data e hora em que o serviço foi iniciado"
+          example: "2026-07-17T10:30:00"
+        dateTimeCompleted:
+          type: string
+          description: "Data e hora em que o serviço foi finalizado"
+          example: "2026-07-18T16:00:00"
+        dateTimeUpdateStatus:
+          type: string
+          description: "Data e hora da última alteração de status da OS"
+          example: "2026-07-17T14:15:00"
+        userTechnical:
+          type: integer
+          description: "ID interno do técnico responsável pela execução do serviço"
+          example: 3
+        serviceRequest:
+          type: integer
+          description: "ID da requisição de orçamento/serviço que originou esta OS"
+          example: 42
+    
+    ServiceOrderUpdateDTO:
+      type: object
+      properties:
+        userTechnical:
+          type: integer
+          description: "ID interno do técnico que será atribuído ou atualizado na ordem de serviço"
+          example: 3
+        status:
+          type: string
+          description: "Novo status a ser definido para a ordem de serviço"
+          example: "EM_ANDAMENTO"
+    
+    ServiceOrderFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "Identificador único da ordem de serviço"
+          example: 1
+        identificationCode:
+          type: string
+          description: "Código  único para rastreio rápido da OS"
+          example: "123456789"
+        status:
+          type: string
+          description: "Situação atual do andamento do serviço"
+          example: "EM_ANDAMENTO"
+        dateTimeStart:
+          type: string
+          description: "Data e hora em que o serviço foi iniciado"
+          example: "2026-07-17T10:30:00"
+        dateTimeCompleted:
+          type: string
+          description: "Data e hora em que o serviço foi finalizado"
+          example: "2026-07-18T16:00:00"
+        dateTimeUpdateStatus:
+          type: string
+          description: "Data e hora da última alteração de status da OS"
+          example: "2026-07-17T14:15:00"
+        serviceRequest:
+          type: integer
+          description: "ID da requisição serviço que originou esta OS"
+          example: 42
+        userTechnical:
+          type: integer
+          description: "ID interno do técnico responsável pela execução do serviço"
+          example: 3
+    
+    PageServiceOrderDetailDTO:
+      type: object 
+      allOf:
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                  $ref: '#/components/schemas/ServiceOrderDetailDTO'
+        - $ref: '#/components/schemas/PageMetadata'
+    
+    ServiceOrderItemFullDTO:
+      type: object
+      properties: 
+        id:
+          type: number 
+          description: ID do Item de Ordem Serviço
+          example: 3
+        serviceOrder:
+          type: number 
+          description: ID da Orderm de Serviço 
+          example: 5
+        part:
+          type: number 
+          description: ID da peça ultilizada 
+          example: 6
+        namePart: 
+          type: string 
+          description: Nome da peça 
+          example: SSD NVME 500GB
+        quantity:
+          type: string 
+          description: Quantidade usada da peça 
+          example: 2
+        unitPrice:
+          type: number 
+          description: Valor pago na peça 
+          example: 120.0
+        subTotal:
+          type: number 
+          description: Valor Total gasto com as peças
+          example: 240.0
+
+    ServiceOrderItemCreateDTO:
+      type: object 
+      properties: 
+        serviceOrder:
+          type: number 
+          description: ID da Orderm de Serviço 
+          example: 5
+        part:
+          type: number 
+          description: ID da peça ultilizada 
+          example: 6
+        quantity:
+          type: string 
+          description: Quantidade usada da peça 
+          example: 2
+    
+    RequestQuantityServiceOrderItem:
+      type: object 
+      properties:
+        quantity:
+          type: string 
+          description: Quantidade usada da peça 
+          example: 2
+
+    ListServiceOrderItemFull:
+       type: array 
+       items:
+        $ref: '#/components/schemas/ServiceOrderItemFullDTO'
+
+    ServiceOrderTaskFullDTO:
+      type: object
+      properties: 
+        id:
+          type: number
+          description: ID Tarefa (Catálogo Serviço) Orderm Serviço
+          example: 3
+        serviceOrder:
+          type: number 
+          description: ID Ordem Serviço 
+          example: 7
+        serviceCatalog:
+          type: number 
+          description: ID Catálogo de Serviço 
+          example: 4
+        nameCatalog:
+          type: string 
+          description: Nome do catálogo Serviço (Tipo de Serviço feito)
+        priceApplied:
+          type: number 
+          description: Preço do Catálogo Serviço
+          example: 150.0
+
+    ServiceOrderTaskCreateDTO:
+      type: object
+      properties: 
+        serviceOrder:
+          type: number 
+          description: ID Ordem Serviço 
+          example: 7
+        serviceCatalog:
+          type: number 
+          description: ID Catálogo de Serviço 
+          example: 4
+    
+    ListServiceOrderTaskFull:
+      type: array 
+      items:
+        $ref: '#/components/schemas/ServiceOrderTaskFullDTO'
+    
+    PaymentsFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "ID de pagamento"
+          example: 1
+        laborAmount:
+          type: number
+          format: double
+          description: "Valor cobrado referente à mão de obra do serviço"
+          example: 150.00
+        partAmount:
+          type: number
+          format: double
+          description: "Valor total das peças utilizadas no conserto"
+          example: 250.50
+        discount:
+          type: number
+          format: double
+          description: "Valor de desconto aplicado ao total"
+          example: 20.00
+        totalAmounts:
+          type: number
+          format: double
+          description: "Valor total final a ser pago (mão de obra + peças - desconto)"
+          example: 380.50
+        paymentsMethod:
+          type: string
+          description: "Método escolhido para a realização do pagamento"
+          example: "PIX"
+        paymentStatus:
+          type: string
+          description: "Status atual da transação financeira"
+          example: "PAID"
+        paidAt:
+          type: string
+          description: "Data e hora exata em que o pagamento foi efetivado e confirmado"
+          example: "2026-07-20T14:30:00"
+        ServiceOrder:
+          type: integer
+          description: "ID da Ordem de Serviço vinculada a este pagamento"
+          example: 42
+        createdAt:
+          type: string
+          description: "Data e hora em que o registro de pagamento foi criado no sistema"
+          example: "2026-07-20T10:15:00"
+    
+    PaymentsUpdateDTO:
+      type: object
+      properties:
+        discount:
+          type: number
+          format: double
+          description: "Valor atualizado do desconto a ser aplicado ao total"
+          example: 15.50
+        paymentMethod:
+          type: string
+          description: "Método de pagamento escolhido pelo cliente"
+          example: "CREDIT_CARD"
+
+    PaymentsRequestStatus:
+      type: object 
+      properties: 
+        paymentsStatus:
+          type: string 
+          description: Atualiza Método de Pagamento 
+          example: CANCELED 
+    
+    DashboardMetricsDTO:
+      type: object 
+      properties: 
+        totalRevenue:
+          type: number 
+          description: Lucro Total Faturado
+          example: 30000
+        realRevenue:
+          type: number 
+          description: Lucro Real Faturado (desconta todo gasto com peças)
+          example: 20000 
+        futureTotalRevenue:
+          type: number 
+          description: Lucro Total Futuro do Mês
+          example: 70000
+        futureRealRevenue: 
+          type: number 
+          description: Lucro Real Futuro do Mês 
+          example: 60000
+        partsExpense:
+          type: number 
+          description: Valor total gasto com peças 
+          example: 40000
+        averageTicket:
+          type: number 
+          description: Média de gasto por Cliente 
+          example: 300.0
+        revenueByCategory:
+          description: Valor gasto por dispositivo
+          type: array 
+          items:
+            type: object 
+            properties: 
+              category:
+                type: string 
+                description: Categoria do dispositivo
+                example: SMARTPHONE
+              totalRevenue:
+                type: number 
+                description: Valor gasto total
+        topCustomers:
+          description: Melhores clientes
+          type: array 
+          items:
+            type: object 
+            properties: 
+              client:
+                type: number 
+                description: ID do CLiente 
+                example: 1
+              name:
+                type: string 
+                description: Nome do Cliente 
+                example: Ednei Gonzaga 
+              totalSpent:
+                type: number 
+                description: Total gasto 
+                example: 400.0 
+        mostUsedParts:
+          description: Peças mais usadas
+          type: array 
+          items:
+            type: object 
+            properties: 
+              name:
+                type: string 
+                description: Nome da peça
+                example: SSD 1TB 
+              quantity:
+                type: number 
+                description: Quantidade  ultilizadas de peça
+                example: 3
+        leastUsedParts:
+          description: Peças menos usadas
+          type: array 
+          items:
+            type: object 
+            properties: 
+              name:
+                type: string 
+                description: Nome da peça
+                example: SSD 1TB 
+              quantity:
+                type: number 
+                description: Quantidade  ultilizadas de peça
+                example: 4
+    
+    DashboardAlertsDTO:
+      type: object
+      properties:
+        technicianQueues:
+          description: "Demanda de Serviços por técnicos"
+          type: array 
+          items:
+            type: object 
+            properties:
+              id:
+                type: integer
+                description: "ID do Técnico"
+                example: 3
+              name:
+                type: string 
+                description: "Nome do técnico"
+                example: "Maria José"
+              quantityService:
+                type: integer 
+                description: "Quantidade de serviços"
+                example: 4
+        stockInAlertRed:
+          description: "Estoque em Alerta Vermelho (Não serão suficientes para passar o mês)"
+          type: array 
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: "Identificador único da peça ou produto"
+                example: 1
+              name:
+                type: string
+                description: "Nome descritivo da peça"
+                example: "Bateria Samsung Galaxy S20"
+              stockQuantity:
+                type: integer
+                description: "Quantidade atual da peça disponível no estoque"
+                example: 45
+              currentMonthConsumption:
+                type: integer
+                description: "Total de unidades consumidas ou utilizadas durante o mês atual"
+                example: 12
+              PreviousMonthConsumption:
+                type: integer
+                description: "Total de unidades consumidas ou utilizadas durante o mês anterior"
+                example: 28
+        stockInAlertYellow:
+          description: "Estoque em Alerta Amarelo (Estoque baixo, requer atenção para os próximos dias)"
+          type: array 
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: "Identificador único da peça ou produto"
+                example: 1
+              name:
+                type: string
+                description: "Nome descritivo da peça"
+                example: "Bateria Samsung Galaxy S20"
+              stockQuantity:
+                type: integer
+                description: "Quantidade atual da peça disponível no estoque"
+                example: 45
+              currentMonthConsumption:
+                type: integer
+                description: "Total de unidades consumidas ou utilizadas durante o mês atual"
+                example: 12
+              PreviousMonthConsumption:
+                type: integer
+                description: "Total de unidades consumidas ou utilizadas durante o mês anterior"
+                example: 28
+        
+    InstanceQrcodeResponse:
+      description: Retorna QrCode em Base64 para conexão com whatsapp 
+      type: object 
+      properties: 
+        pairingCode:
+          type: string
+          description: Codigo de pareamento, caso não use QrCode
+        code:
+          type: string 
+          description: Texto Bruto do QrCode
+        base64:
+          type: string 
+          decription: QrCode em formato Base64
+        count: 
+          type: integer 
+          description: Contador de Geração. Exibe a quantidade de vezes que foi solicitado a conexão
+
+    InstanceDetailResponse:
+      description: Exibe os detalhes da conexão com WhatsApp
+      type: object 
+      properties: 
+          name:
+            type: string 
+            description: Exibe o nome da Conexão 
+          connectionStatus:
+            type: string 
+            description:  Exibe status da conexão
+          number:
+            type: string 
+            description: Exibe numero que foi vinculado a conexão 
+          integration:
+            type: string 
+            description: Exibe qual motor de comunicação foi usado nessa conexão    
+
+    SupportContactFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador único do contato de suporte
+          example: 1
+        type:
+          type: string
+          description: " Tipo do canal de contato (ex: WHATSAPP, EMAIL, PHONE)"
+          example: "WHATSAPP"
+        contact:
+          type: string
+          description: Endereço ou número do contato
+          example: "5511999999999"
+        description:
+          type: string
+          description: Breve descrição sobre a finalidade deste contato
+          example: "Canal de atendimento exclusivo para suporte técnico"
+        createdAt:
+          type: string
+          format: date-time
+          description: "Data e hora em que o contato foi registrado no sistema"     
+
+    SupportContactCreateDTO:
+      type: object
+      required:
+        - type
+        - contact
+        - description
+      properties:
+        type:
+          type: string
+          description: "Tipo do canal de contato a ser cadastrado (ex: WHATSAPP, EMAIL, PHONE)"
+          example: "WHATSAPP"
+        contact:
+          type: string
+          description: Endereço ou número do contato
+          example: "5511999999999"
+        description:
+          type: string
+          description: Breve descrição sobre a finalidade deste contato
+          example: "Canal de atendimento exclusivo para suporte técnico"         
+
+    SupportContactUpdateDTO:
+      type: object
+      properties:
+        type:
+          type: string
+          description: "Tipo do canal de contato a ser atualizado (ex: WHATSAPP, EMAIL, PHONE)"
+          example: "WHATSAPP"
+        contact:
+          type: string
+          description: Endereço ou número do contato atualizado
+          example: "5511988888888"
+        description:
+          type: string
+          description: Nova descrição sobre a finalidade deste contato
+          example: "Canal de atendimento atualizado para suporte técnico" 
+
+    PaymentsHistoryFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador único do histórico
+        paymentId:
+          type: integer
+          format: int64
+          description: Identificador do pagamento associado
+        userId:
+          type: integer
+          format: int64
+          description: Identificador do usuário que realizou a ação
+        oldStatus:
+          type: string
+          description: Status anterior do pagamento
+          example: "PENDING"
+        newStatus:
+          type: string
+          description: Status novo do pagamento
+          example: "CANCELED"
+        transactionAmount:
+          type: number
+          format: double
+          description: Valor da transação registrada
+          example: 150.75
+        notes:
+          type: string
+          description: Observações adicionais sobre a mudança de status
+          example: "Pagamento aprovado manualmente pelo administrador"
+        createdAt:
+          type: string
+          format: date-time
+          description: Data e hora em que o histórico foi criado
+        
+    PagePaymentsHistoryFull:
+      allOf: 
+        - type: object
+          properties: 
+            content:
+              type: array 
+              items:
+                $ref: '#/components/schemas/PaymentsHistoryFullDTO'
+        - $ref: '#/components/schemas/PageMetadata'
+
+    ServiceOrderHistoryFullDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador único do histórico
+        serviceOrderId:
+          type: integer
+          format: int64
+          description: Identificador da ordem de serviço
+        userId:
+          type: integer
+          format: int64
+          description: Identificador do usuário que realizou a ação
+        oldStatus:
+          type: string
+          description: Status anterior da ordem de serviço
+          example: "PEDING"
+        newStatus:
+          type: string
+          description: Status novo da ordem de serviço
+          example: "COMPLETED"
+        notes:
+          type: string
+          description: Observações adicionais sobre a mudança de status
+          example: "Finalizado após revisão técnica"
+        createdAt:
+          type: string
+          format: date-time
+          description: Data e hora em que o histórico foi criado
+    
+    PageServiceOrderHistoryFull:
+      allOf:
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ServiceOrderHistoryFullDTO'
+        - $ref: '#/components/schemas/PageMetadata'
+                  
+
+        

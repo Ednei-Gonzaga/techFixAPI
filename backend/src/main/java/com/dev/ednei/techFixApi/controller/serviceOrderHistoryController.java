@@ -18,7 +18,7 @@ public class serviceOrderHistoryController {
     @Autowired
     private ServiceOrderHistoryService serviceOrderHistoryService;
 
-    @GetMapping("/service-order/{id}/history-updates")
+    @GetMapping("/service-order/{id}/history/updates")
     public ResponseEntity<Page<ServiceOrderHistoryFullDTO>> findAllByOs(@PathVariable(name = "id") Long id, Pageable pageable){
         return ResponseEntity.status(HttpStatus.OK).body(serviceOrderHistoryService.findAllByOrderService(id, pageable));
     }

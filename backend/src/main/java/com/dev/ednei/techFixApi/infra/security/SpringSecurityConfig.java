@@ -43,6 +43,7 @@ public class SpringSecurityConfig {
                         .requestMatchers(
                                 "/api/v2/auth/login",
                                 "/api/v2/users/password-reset/request-verification-codes",
+                                "/api/v2/users/reset-password",
                                 "/api/v2/service-orders/identification-code/*",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -56,12 +57,12 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v2/admin/service-catalogs").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/v2/service-orders/*/payments").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.PUT, "/api/v2/service-orders/*/payments").hasAnyRole("MANAGER", "ATTENDANT")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v2/service-orders/*/payments").hasAnyRole("MANAGER", "ATTENDANT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v2/service-orders/*/payments/status").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.PATCH, "/api/v2/parts/*/quantity").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
                         .requestMatchers(HttpMethod.PATCH, "/api/v2/parts/*/enable").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/v2/service-requests/clients/*").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.GET, "/api/v2/service-order-items/service-order/*", "/api/v2/service-orders/*/task").hasAnyRole("MANAGER", "TECHNICAL", "ATTENDANT")
-                        .requestMatchers("/api/v2/service-order/my-tasks").hasAnyRole("MANAGER", "TECHNICAL")
+                        .requestMatchers("/api/v2/service-orders/my-tasks").hasAnyRole("MANAGER", "TECHNICAL")
                         .requestMatchers(HttpMethod.POST, "/api/v2/clients").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.GET, "/api/v2/clients", "/api/v2/clients/*").hasAnyRole("MANAGER", "ATTENDANT")
                         .requestMatchers(HttpMethod.PUT, "/api/v2/clients/*").hasAnyRole("MANAGER", "ATTENDANT")

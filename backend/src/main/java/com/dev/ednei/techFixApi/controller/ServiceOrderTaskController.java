@@ -25,7 +25,7 @@ public class ServiceOrderTaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(serviceOrderTask);
     }
 
-    @GetMapping("/service-order/{id}/task")
+    @GetMapping("/service-orders/{id}/task")
     public ResponseEntity<List<ServiceOrderTaskFullDTO>> getAllByServiceOrderId(@PathVariable(name = "id") Long id) {
         var serviceOrderTasks = serviceOrderTaskService.getAllByServiceOrderId(id);
         return ResponseEntity.status(HttpStatus.OK).body(serviceOrderTasks);

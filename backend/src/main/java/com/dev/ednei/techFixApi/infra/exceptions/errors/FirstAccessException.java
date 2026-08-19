@@ -7,7 +7,8 @@ public class FirstAccessException extends RuntimeException {
 
     private String token;
 
-    public FirstAccessException(String tokenResponse) {
+    public FirstAccessException(String message, String tokenResponse) {
+        super(message);
         this.token = tokenResponse;
     }
 }

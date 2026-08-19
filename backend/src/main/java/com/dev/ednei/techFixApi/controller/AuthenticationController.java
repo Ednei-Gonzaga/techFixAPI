@@ -3,6 +3,7 @@ package com.dev.ednei.techFixApi.controller;
 import com.dev.ednei.techFixApi.DTOS.authentication.AuthenticationRequest;
 import com.dev.ednei.techFixApi.infra.exceptions.errors.FirstAccessException;
 import com.dev.ednei.techFixApi.model.User;
+import com.dev.ednei.techFixApi.service.AuthenticationService;
 import com.dev.ednei.techFixApi.service.TokenService;
 import com.dev.ednei.techFixApi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v2")
 public class AuthenticationController {
+    @Autowired
+    private AuthenticationService  authenticationService;
 
     @Autowired
     private AuthenticationManager manager;
@@ -33,9 +36,7 @@ public class AuthenticationController {
        var token = tokenService.createTokenJwt((User) authentication.getPrincipal());
        var user  = (User) authentication.getPrincipal();
 
-       if(!user.isForcePasswordChanger()){
-           throw new FirstAccessException(tokenService.tokenJwtForAlterPassword(user));
-       }
+       authenticationService.checkForcePasswordAndUpdateUserDefault(user, tokenService);
 
        userService.registerLastLogin(user);
 

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -98,6 +99,14 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problemDetail);
     }
 
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    public ResponseEntity handlerInternalAuthenticationServiceException(InternalAuthenticationServiceException ex, HttpServletRequest request){
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Usuário inexistente ou senha inválida");
+        problemDetail.setTitle("Bad Credentials");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problemDetail);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity handlerHttpMessageNotReadableException(HttpMessageNotReadableException ex, HttpServletRequest request){
 
@@ -109,8 +118,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(FirstAccessException.class)
     public ResponseEntity handlerFirstAccessException(FirstAccessException ex){
-        var message = "É necessário atualizar a senha no primeiro acesso. Use o token enviado com validade de 10 minutos e acesse a rota '/api/v2/users/me/password' para atualizar.";
-        var firstAccessDTO = new FirstAccessResponseDTO(message, ex.getToken());
+        var firstAccessDTO = new FirstAccessResponseDTO(ex.getMessage(), ex.getToken());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(firstAccessDTO);
     }
 

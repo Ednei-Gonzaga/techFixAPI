@@ -15,8 +15,6 @@ public class AuthenticationService implements UserDetailsService {
     @Autowired
     private UserRepository userRepository;
 
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
-
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByLogin(username);
@@ -24,8 +22,9 @@ public class AuthenticationService implements UserDetailsService {
 
     //metodos para controller
     public void checkForcePasswordAndUpdateUserDefault(User user, TokenService tokenService) {
+        BCryptPasswordEncoder bCryptPasswordEncoder =  new BCryptPasswordEncoder(10);
 
-        if (user.getLogin().equals("UserAdmin") || bCryptPasswordEncoder.matches("TechFix@Api", user.getLogin())) {
+        if (user.getLogin().equals("UserAdmin") || bCryptPasswordEncoder.matches("TechFix@Api", user.getPassword())) {
             throw new FirstAccessException(
                     """
                             Identificamos que você fez login com o usuário padrão, mas ainda não alterou suas informações de acesso. Utilize o token enviado (válido por 10 minutos) e acesse a rota '/api/v2/employees/1' para atualizar seu username e dados pessoais. Em seguida, acesse '/api/v2/users/me/password' para atualizar sua senha.

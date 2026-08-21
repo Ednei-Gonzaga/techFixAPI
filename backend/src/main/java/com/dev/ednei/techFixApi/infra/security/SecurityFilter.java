@@ -69,12 +69,14 @@ public class SecurityFilter extends OncePerRequestFilter {
         var objectToken = tokenService.decodeTokenJwt(token);
         var tokenIsUpdate = objectToken.getClaim("scope").asString().equals("force_update");
         String pathRequest = request.getRequestURI();
+        boolean isMethodPutOrGet = request.getMethod().equals("PUT") || request.getMethod().equals("GET");
+        var userId = Integer.parseInt(objectToken.getSubject());
 
-        if (Integer.parseInt(objectToken.getSubject()) != 1 && tokenIsUpdate && (!pathRequest.equals("/api/v2/users/me/password"))) {
+        if ( userId != 1 && tokenIsUpdate && !(pathRequest.equals("/api/v2/users/me/password") && isMethodPutOrGet)) {
             throw new AccessForbiddenException("O token e exclusivo para rotas de atualização de senha");
         }
 
-        if (Integer.parseInt(objectToken.getSubject()) == 1 && tokenIsUpdate && (!pathRequest.equals("/api/v2/users/me/password") && !pathRequest.equals("/api/v2/employees/1") && !pathRequest.equals("/employees/me"))) {
+        if (userId == 1 && tokenIsUpdate && !((pathRequest.equals("/api/v2/users/me/password") || pathRequest.equals("/api/v2/employees/1") || pathRequest.equals("/api/v2/employees/me")) && isMethodPutOrGet)) {
             throw new AccessForbiddenException("O token e exclusivo para rotas de atualização de senha e de dados do usuario/funcionario.");
         }
 

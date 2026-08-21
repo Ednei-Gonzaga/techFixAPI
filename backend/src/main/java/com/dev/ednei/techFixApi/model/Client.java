@@ -30,7 +30,7 @@ public class Client extends PeopleData {
         setId(client);
     }
 
-    public void updateClient(ClientUpdateDTO clientDto) {
+    public void updateClient(ClientUpdateDTO clientDto) throws NumberParseException {
         if(StringUtils.hasText(clientDto.name())) {
             this.setName(clientDto.name());
         }

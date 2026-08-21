@@ -31,7 +31,7 @@ public class Employee extends PeopleData {
     }
 
 
-    public void updateById(EmployeeManagerUpdateDTO dto) {
+    public void updateById(EmployeeManagerUpdateDTO dto) throws NumberParseException {
         if (StringUtils.hasText(dto.name())) {
             this.setName(dto.name());
         }
@@ -50,7 +50,7 @@ public class Employee extends PeopleData {
         }
     }
 
-    public void updateByEmployeeLogged(EmployeeProfileUpdateDTO dto) {
+    public void updateByEmployeeLogged(EmployeeProfileUpdateDTO dto) throws NumberParseException {
         if (StringUtils.hasText(dto.phone())) {
             this.setPhone(dto.phone());
         }

@@ -6,10 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @MappedSuperclass
 @AllArgsConstructor
@@ -25,8 +22,10 @@ public abstract class PeopleData {
 
     private String cpf;
 
+    @Setter(AccessLevel.NONE)
     private String phone;
 
+    @Setter(AccessLevel.NONE)
     private String whatsapp;
 
     public PeopleData(String name, String cpf, String phone, String whatsapp) throws NumberParseException {
@@ -44,5 +43,13 @@ public abstract class PeopleData {
         var formatCorrect =  util.format(parsePhone, PhoneNumberUtil.PhoneNumberFormat.E164).replaceAll("[^0-9]", "");
 
         return formatCorrect;
+    }
+
+    public void setPhone(String phone) throws NumberParseException {
+        this.phone = convertNationalStandardPhone(phone);
+    }
+
+    public void setWhatsapp(String whatsapp) throws NumberParseException {
+        this.whatsapp = convertNationalStandardPhone(whatsapp);
     }
 }

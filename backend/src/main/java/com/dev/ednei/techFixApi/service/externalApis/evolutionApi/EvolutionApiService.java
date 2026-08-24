@@ -26,7 +26,8 @@ public class EvolutionApiService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private final String server = "http://localhost:8081";
+    @Value("${EVOLUTION_API_SERVER}")
+    private String server;
 
     @Value("${INSTANCE_NOTIFICATION_OS}")
     private String instanceStandard;

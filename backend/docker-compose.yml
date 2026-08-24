@@ -1,13 +1,16 @@
 services:
 
-  # 1. Nosso Banco de Dados
+#Postgres
   postgres:
     image: postgres:17-alpine
     ports:
       - "5432:5432"
     environment:
+      ## Defina um USUÁRIO PARA O BANCO AQUI
       POSTGRES_USER: admin
+      ## DEFINA UMA SENHA PARA O BANCO AQUI
       POSTGRES_PASSWORD: postgres123
+      ## DEFINA UM NOME PARA O BANCO DE DADOS AQUI
       POSTGRES_DB: techfix_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -20,23 +23,32 @@ services:
       timeout: 5s
       retries: 5
 
-
+  # TechFix
   api-java:
     build: . 
     ports:
       - "8080:8080"
     depends_on:
-      - postgres  # Avisa que o Java precisa esperar o banco ligar
+      postgres:
+        condition: service_healthy
     environment:
-      # Trocamos o localhost pelo nome do serviço do banco!
+      # Endereço URL do nosso banco de dados, o ultimo parametro do path eo nome do banco e tem que ser o mesmo do Service POSTGRES
       URL_DB: jdbc:postgresql://postgres:5432/techfix_db
+      # Nome do banco de dados usado no service POSTGRES
       USERNAME_DB: admin
+      # Senha do banco de dados usado no service POSTGRES
       PASSWORD_DB: postgres123
-      SHIPPING_EMAIL: projetosteste82@gmail.com
-      PASSWORD_EMAIL: dvwv tzsg apgq gxrn
-      PASSWORD_TOKEN: tech123
+      ## E-MAIL QUE FARÁ ENVIo DAS MENSAGENS
+      SHIPPING_EMAIL: seu-email-real@gmail.com
+      ## SENHA DE APLICATIVO DO GMAIL
+      PASSWORD_EMAIL: sua_senha_de_app_gerada_aqui
+      ## CHAVE PARA GERAR OS TOKENS DE AUTENTICAÇÃO DA API
+      PASSWORD_TOKEN: techFix@Api482
+      ## NOME DA INSTÂNCIA DO WHATSAPP NA EVOLUTION API
       INSTANCE_NOTIFICATION_OS: techfix-instance
+      ## CHAVE DE SEGURANÇA PARA ACESSAR A EVOLUTION API
       EVOLUTION_API_KEY: evolution_api_techFix_12345
+      EVOLUTION_API_SERVER: http://evolution:8081
     networks:
       - app_network
 
@@ -66,7 +78,7 @@ services:
     restart: unless-stopped
     environment:
       - SERVER_TYPE=http
-      - SERVER_PORT=${EVOLUTION_PORT:-8080}
+      - SERVER_PORT=${EVOLUTION_PORT:-8081}
       - SERVER_URL=${EVOLUTION_SERVER_URL:-}
       - LOG_LEVEL=${EVOLUTION_LOG_LEVEL:-ERROR,WARN,DEBUG,INFO}
       - LOG_COLOR=true
@@ -76,6 +88,7 @@ services:
       - CORS_CREDENTIALS=true
       # Database (use as mesmas credenciais do postgres acima)
       - DATABASE_PROVIDER=postgresql
+      ## Coloque os mesmos dados do service Postgres
       - DATABASE_CONNECTION_URI=postgresql://admin:postgres123@postgres:5432/evolution_db?schema=public
       - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
       - DATABASE_SAVE_DATA_INSTANCE=true
@@ -102,7 +115,7 @@ services:
       - QRCODE_COLOR=#175197
       - CONFIG_SESSION_PHONE_CLIENT=Evolution API
       - CONFIG_SESSION_PHONE_NAME=Chrome
-      # API Key (ALTERE AQUI - importante!)
+      # Essa e chave da API do Evolution, caso altere aqui, altere tambem a variavel correspondente em Service techFix-api-java
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-evolution_api_techFix_12345}
       - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
       - TYPEBOT_ENABLED=false
@@ -113,7 +126,7 @@ services:
       - TZ=America/Sao_Paulo
       - DEL_INSTANCE=false
     ports:
-      - "8081:8080"
+      - "8081:8081"
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store

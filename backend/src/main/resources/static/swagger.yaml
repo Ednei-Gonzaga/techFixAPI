@@ -23,7 +23,7 @@ paths:
       summary: Realizar a autenticação do usuário
       description: |
         Endpoint responsável por autenticar um usuário no sistema. Valida se é o primeiro acesso do usuário (obrigatoriedade de alterar a senha). 
-        Se for o primeiro acesso, retorna um token temporário (válido por 10 minutos) para a alteração de senha.
+        Se for o primeiro acesso, retorna um token temporário (válido por 10 minutos) para a alteração de senha, e com esse token só é possivel acessar as rotas de atualização senha.
         
         Este é um endpoint público e não requer autenticação.
       security: [] 

@@ -188,7 +188,7 @@ Todos os endpoints ficam sob o prefixo `/api/v2`. Alguns destaques:
 | Analytics                   | `/dashboard/metrics`, `/real-time-alerts`                            | Métricas e alertas gerenciais (restrito a `MANAGER`)         |
 | WhatsApp                    | `/whatsapp/instance/connect`, `/whatsapp/instance/detail`, `/whatsapp/instance` | Gestão da conexão com a Evolution API (restrito a `MANAGER`) |
  
-A descrição detalhada de cada endpoint (parâmetros, corpo de requisição, respostas e códigos de erro) está disponível no Swagger UI da aplicação.
+A descrição detalhada de cada endpoint (parâmetros, corpo de requisição, respostas e códigos de erro) está disponível no Swagger UI da aplicação. E a explicação de funcionamento de cada endpoint fica na [Documentação Detalhada](https://github.com/Ednei-Gonzaga/techFixAPI/blob/main/backend/src/main/resources/static/TechFixApi-Docs.pdf) na pasta `resources/static`.
  
 ## 📁 Estrutura do projeto
  
